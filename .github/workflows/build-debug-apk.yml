@@ -30,6 +30,7 @@ jobs:
 
       - name: Build debug APK (FOSS, no Sentry)
         run: |
+          chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
           ./gradlew androidApp:assembleDebug --no-configuration-cache
 
