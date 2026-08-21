@@ -1,0 +1,106 @@
+package com.maxrave.data.repository
+
+import com.maxrave.data.db.datasource.LocalDataSource
+import com.maxrave.domain.data.entities.LocalPlaylistEntity
+import com.maxrave.domain.data.entities.SongEntity
+import com.maxrave.domain.manager.DataStoreManager
+import com.maxrave.domain.repository.SpotifyPlaylistItem
+import com.maxrave.domain.repository.SpotifySyncProgress
+import com.maxrave.domain.repository.SpotifySyncRepository
+import com.maxrave.domain.utils.MusicVideoType
+import com.maxrave.kotlinytmusicscraper.YouTube
+import com.maxrave.kotlinytmusicscraper.models.SongItem
+import com.maxrave.logger.Logger
+import com.maxrave.spotify.Spotify
+import com.maxrave.spotify.model.response.spotify.playlist.SpotifyPlaylist
+import com.maxrave.spotify.model.response.spotify.playlist.SpotifyTrack
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+
+private const val TAG = "SpotifySyncRepo"
+
+internal class SpotifySyncRepositoryImpl(
+    private val spotify: Spotify,
+    private val youtube: YouTube,
+    private val localDataSource: LocalDataSource,
+    private val dataStoreManager: DataStoreManager,
+) : SpotifySyncRepository {
+
+    private suspend fun getValidToken(): String? {
+        val token = dataStoreManager.spotifyOAuthAccessToken.first()
+        val expiresAt = dataStoreManager.spotifyOAuthExpiresAt.first()
+        if (token.isNotEmpty() && expiresAt > System.currentTimeMillis()) return token
+        val refreshToken = dataStoreManager.spotifyOAuthRefreshToken.first()
+        if (refreshToken.isEmpty()) return null
+        return try {
+            val result = spotify.refreshOAuthToken(refreshToken)
+            result.onSuccess { tr ->
+                dataStoreManager.setSpotifyOAuthAccessToken(tr.accessToken)
+                dataStoreManager.setSpotifyOAuthRefreshToken(tr.refreshToken)
+                dataStoreManager.setSpotifyOAuthExpiresAt(System.currentTimeMillis() + (tr.expiresIn * 1000L))
+                tr.accessToken
+            }.getOrNull()
+        } catch (e: Exception) { Logger.e(TAG, "Token refresh failed: ${e.message}"); null }
+    }
+
+    override fun fetchPlaylists(): Flow<SpotifySyncProgress> = flow {
+        emit(SpotifySyncProgress.Loading)
+        val token = getValidToken()
+        if (token == null) { emit(SpotifySyncProgress.Error("Spotify non connecté.")); return@flow }
+        val all = mutableListOf<SpotifyPlaylist>()
+        var offset = 0; var total = Int.MAX_VALUE
+        try {
+            while (offset < total) {
+                emit(SpotifySyncProgress.FetchingPlaylists(offset, total))
+                spotify.getUserPlaylists(token, 50, offset).onSuccess {
+                    total = it.total ?: 0; all.addAll(it.items); offset += 50
+                }.onFailure { emit(SpotifySyncProgress.Error("Erreur: ${it.message}")); return@flow }
+            }
+            emit(SpotifySyncProgress.PlaylistsReady(all.map { SpotifyPlaylistItem(it.id, it.name, it.description, it.tracks?.total ?: 0, it.images.firstOrNull()?.url, it.owner?.display_name) }))
+        } catch (e: Exception) { emit(SpotifySyncProgress.Error("Erreur: ${e.message}")) }
+    }.flowOn(Dispatchers.IO)
+
+    override fun importPlaylist(playlistId: String, playlistName: String): Flow<SpotifySyncProgress> = flow {
+        emit(SpotifySyncProgress.Loading)
+        val token = getValidToken()
+        if (token == null) { emit(SpotifySyncProgress.Error("Spotify non connecté.")); return@flow }
+        try {
+            val tracks = mutableListOf<SpotifyTrack>()
+            var offset = 0; var total = Int.MAX_VALUE
+            while (offset < total) {
+                emit(SpotifySyncProgress.Importing(playlistName, tracks.size, total))
+                spotify.getPlaylistTracks(token, playlistId, 100, offset).onSuccess {
+                    total = it.total ?: 0; it.items.forEach { i -> i.track?.let { t -> if (t.id.isNotEmpty() && !(i.isLocal ?: false)) tracks.add(t) } }; offset += 100
+                }.onFailure { emit(SpotifySyncProgress.Error("Erreur: ${it.message}")); return@flow }
+            }
+            val songs = mutableListOf<SongEntity>(); val vids = mutableListOf<String>(); var skip = 0
+            tracks.forEachIndexed { idx, t ->
+                emit(SpotifySyncProgress.Importing(playlistName, idx + 1, tracks.size))
+                try {
+                    val r = youtube.search("${t.artists.joinToString(" ") { it.name }} ${t.name}", YouTube.SearchFilter.FILTER_SONG)
+                    val first = r.getOrNull()?.items?.firstOrNull()
+                    if (first is SongItem) { songs.add(SongEntity(first.id, null, null, first.artists.mapNotNull { it.id }.takeIf { it.isNotEmpty() }, first.artists.map { it.name }.takeIf { it.isNotEmpty() }, first.duration?.toString() ?: "", first.duration ?: 0, true, first.explicit, "", first.thumbnail, first.title, MusicVideoType.MUSIC_VIDEO_TYPE_ATV_WATCH, null, null, false, 0, 0)); vids.add(first.id) } else skip++
+                } catch (_: Exception) { skip++ }
+            }
+            if (songs.isNotEmpty()) localDataSource.insertSongs(songs)
+            localDataSource.insertLocalPlaylistWithTracks(LocalPlaylistEntity(title = playlistName, thumbnail = null, tracks = vids), vids)
+            emit(SpotifySyncProgress.PlaylistImported(playlistName, songs.size, skip))
+        } catch (e: Exception) { emit(SpotifySyncProgress.Error("Erreur: ${e.message}")) }
+    }.flowOn(Dispatchers.IO)
+
+    override fun importAllPlaylists(playlists: List<Pair<String, String>>): Flow<SpotifySyncProgress> = flow {
+        var imp = 0; var sk = 0
+        playlists.forEach { (id, name) ->
+            emit(SpotifySyncProgress.Importing(name, playlists.indexOf(Pair(id, name)), playlists.size))
+            importPlaylist(id, name).collect { p ->
+                if (p is SpotifySyncProgress.PlaylistImported) { imp += p.tracksImported; sk += p.tracksSkipped }
+                else if (p is SpotifySyncProgress.Error) emit(p)
+            }
+        }
+        emit(SpotifySyncProgress.AllImported(playlists.size, imp, sk))
+    }.flowOn(Dispatchers.IO)
+}
