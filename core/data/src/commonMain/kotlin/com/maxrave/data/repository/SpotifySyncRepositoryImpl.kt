@@ -83,7 +83,7 @@ internal class SpotifySyncRepositoryImpl(
                 try {
                     val r = youtube.search("${t.artists.joinToString(" ") { it.name }} ${t.name}", YouTube.SearchFilter.FILTER_SONG)
                     val first = r.getOrNull()?.items?.firstOrNull()
-                    if (first is SongItem) { songs.add(SongEntity(first.id, null, null, first.artists.mapNotNull { it.id }.takeIf { it.isNotEmpty() }, first.artists.map { it.name }.takeIf { it.isNotEmpty() }, first.duration?.toString() ?: "", first.duration ?: 0, true, first.explicit, "", first.thumbnail, first.title, MusicVideoType.MUSIC_VIDEO_TYPE_ATV_WATCH, null, null, false, 0, 0)); vids.add(first.id) } else skip++
+                    if (first is SongItem) { songs.add(SongEntity(videoId = first.id, albumId = null, albumName = null, artistId = first.artists.mapNotNull { it.id }.takeIf { it.isNotEmpty() }, artistName = first.artists.map { it.name }.takeIf { it.isNotEmpty() }, duration = first.duration?.toString() ?: "", durationSeconds = first.duration ?: 0, isAvailable = true, isExplicit = first.explicit, likeStatus = "", thumbnails = first.thumbnail, title = first.title, videoType = MusicVideoType.MUSIC_VIDEO_TYPE_ATV_WATCH, category = null, resultType = null)); vids.add(first.id) } else skip++
                 } catch (_: Exception) { skip++ }
             }
             if (songs.isNotEmpty()) localDataSource.insertSongs(songs)
