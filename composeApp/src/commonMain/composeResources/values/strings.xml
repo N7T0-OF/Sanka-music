@@ -641,4 +641,11 @@
     <string name="max_selection_reached">You can select up to %1$d songs at a time</string>
     <string name="exit_selection">Exit selection</string>
     <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="player">Player</string>
+    <string name="show_artist_section">Show artist section</string>
+    <string name="show_artist_section_description">Display the artist information card on the now playing screen</string>
+    <string name="show_description_section">Show description section</string>
+    <string name="show_description_section_description">Display the description and stats card on the now playing screen</string>
+    <string name="show_lyrics_section">Show lyrics section</string>
+    <string name="show_lyrics_section_description">Display the lyrics card on the now playing screen</string>
 </resources>

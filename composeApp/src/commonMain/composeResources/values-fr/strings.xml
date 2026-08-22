@@ -594,4 +594,11 @@
     <string name="import_result_skipped">%1$d entrées ont été ignorées car le titre correspondant était absente du fichier.</string>
     <string name="import_failed">Échec de l'importation</string>
     <string name="import_invalid_file">Ce fichier n'est pas un fichier d'importation SimpMusic valide. Commencez par convertir votre bibliothèque sur simpmusic.org.</string>
+    <string name="player">Lecteur</string>
+    <string name="show_artist_section">Afficher la section artiste</string>
+    <string name="show_artist_section_description">Afficher la carte d'information de l'artiste sur l'écran de lecture</string>
+    <string name="show_description_section">Afficher la section description</string>
+    <string name="show_description_section_description">Afficher la carte de description et statistiques sur l'écran de lecture</string>
+    <string name="show_lyrics_section">Afficher la section paroles</string>
+    <string name="show_lyrics_section_description">Afficher la carte de paroles sur l'écran de lecture</string>
 </resources>

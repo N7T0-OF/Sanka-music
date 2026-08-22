@@ -425,6 +425,18 @@ interface DataStoreManager {
 
     suspend fun setEnableLiquidGlass(enable: Boolean)
 
+    val showArtistInPlayer: Flow<String>
+
+    suspend fun setShowArtistInPlayer(show: Boolean)
+
+    val showDescriptionInPlayer: Flow<String>
+
+    suspend fun setShowDescriptionInPlayer(show: Boolean)
+
+    val showLyricsInPlayer: Flow<String>
+
+    suspend fun setShowLyricsInPlayer(show: Boolean)
+
     /** One of [THEME_MODE_SYSTEM], [THEME_MODE_DARK], [THEME_MODE_LIGHT]. */
     val themeMode: Flow<String>
 

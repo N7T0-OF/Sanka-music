@@ -2,8 +2,10 @@ package com.maxrave.simpmusic.ui.screen.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.MarqueeAnimationMode
@@ -15,6 +17,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -536,6 +540,9 @@ fun SettingScreen(
     val autoBackupLastTime by viewModel.autoBackupLastTime.collectAsStateWithLifecycle()
     val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
     val enableLiquidGlass by viewModel.enableLiquidGlass.collectAsStateWithLifecycle()
+    val showArtistInPlayer by viewModel.showArtistInPlayer.collectAsStateWithLifecycle()
+    val showDescriptionInPlayer by viewModel.showDescriptionInPlayer.collectAsStateWithLifecycle()
+    val showLyricsInPlayer by viewModel.showLyricsInPlayer.collectAsStateWithLifecycle()
     val themeMode by sharedViewModel.getThemeMode().collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
     val themeColorSource by sharedViewModel.getThemeColorSource().collectAsStateWithLifecycle(DataStoreManager.THEME_COLOR_DEFAULT)
     val customThemeColorHex by sharedViewModel.getCustomThemeColor().collectAsStateWithLifecycle(DataStoreManager.DEFAULT_THEME_COLOR_HEX)
@@ -588,6 +595,9 @@ fun SettingScreen(
         mutableStateOf(false)
     }
 
+    // Collapsible sections state — only one section expanded at a time.
+    var expandedSection by rememberSaveable { mutableStateOf<String?>(null) }
+
     LaunchedEffect(true) {
         viewModel.getAllGoogleAccount()
     }
@@ -608,9 +618,13 @@ fun SettingScreen(
             Spacer(Modifier.height(64.dp))
         }
         item(key = "user_interface") {
-            Column {
-                Spacer(Modifier.height(16.dp))
-                Text(text = stringResource(Res.string.user_interface), style = typo().labelMedium, color = MaterialTheme.colorScheme.onBackground)
+            CollapsibleSettingsSection(
+                sectionKey = "user_interface",
+                title = stringResource(Res.string.user_interface),
+                expandedSection = expandedSection,
+                onToggle = { expandedSection = it },
+            ) {
+                Spacer(Modifier.height(8.dp))
                 val themeModeLabels =
                     listOf(
                         DataStoreManager.THEME_MODE_SYSTEM to stringResource(Res.string.theme_mode_system),
@@ -697,6 +711,30 @@ fun SettingScreen(
                         isEnable = getPlatform() == Platform.Android,
                     )
                 }
+                Text(
+                    text = stringResource(Res.string.player),
+                    style = typo().labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                SettingItem(
+                    title = stringResource(Res.string.show_artist_section),
+                    subtitle = stringResource(Res.string.show_artist_section_description),
+                    smallSubtitle = true,
+                    switch = (showArtistInPlayer to { viewModel.setShowArtistInPlayer(it) }),
+                )
+                SettingItem(
+                    title = stringResource(Res.string.show_description_section),
+                    subtitle = stringResource(Res.string.show_description_section_description),
+                    smallSubtitle = true,
+                    switch = (showDescriptionInPlayer to { viewModel.setShowDescriptionInPlayer(it) }),
+                )
+                SettingItem(
+                    title = stringResource(Res.string.show_lyrics_section),
+                    subtitle = stringResource(Res.string.show_lyrics_section_description),
+                    smallSubtitle = true,
+                    switch = (showLyricsInPlayer to { viewModel.setShowLyricsInPlayer(it) }),
+                )
                 val orientationLabels =
                     listOf(
                         DataStoreManager.ORIENTATION_AUTO to stringResource(Res.string.orientation_auto),
@@ -770,13 +808,13 @@ fun SettingScreen(
             }
         }
         item(key = "content") {
-            Column {
-                Text(
-                    text = stringResource(Res.string.content),
-                    style = typo().labelMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
+            CollapsibleSettingsSection(
+                sectionKey = "content",
+                title = stringResource(Res.string.content),
+                expandedSection = expandedSection,
+                onToggle = { expandedSection = it },
+            ) {
+                Spacer(Modifier.height(8.dp))
                 SettingItem(
                     title = stringResource(Res.string.youtube_account),
                     subtitle = stringResource(Res.string.manage_your_youtube_accounts),
@@ -2465,11 +2503,11 @@ fun SettingScreen(
                         append(beforeUrl)
                         withLink(
                             LinkAnnotation.Url(
-                                "https://www.simpmusic.org/tools",
+                                "https://github.com/N7T0-OF/Sankamusic",
                                 TextLinkStyles(style = SpanStyle(color = MaterialTheme.colorScheme.primary)),
                             ),
                         ) {
-                            append("https://www.simpmusic.org/tools")
+                            append("https://github.com/N7T0-OF/Sankamusic")
                         }
                         append(afterUrl)
                     },
@@ -2479,13 +2517,13 @@ fun SettingScreen(
             }
         }
         item(key = "about_us") {
-            Column {
-                Text(
-                    text = stringResource(Res.string.about_us),
-                    style = typo().labelMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
+            CollapsibleSettingsSection(
+                sectionKey = "about_us",
+                title = stringResource(Res.string.about_us),
+                expandedSection = expandedSection,
+                onToggle = { expandedSection = it },
+            ) {
+                Spacer(Modifier.height(8.dp))
                 SettingItem(
                     title = stringResource(Res.string.version),
                     subtitle = stringResource(Res.string.version_format, VersionManager.getVersionName()),
@@ -2504,7 +2542,7 @@ fun SettingScreen(
                         if (updateChannel == DataStoreManager.FDROID) {
                             "F-Droid"
                         } else {
-                            "SimpMusic GitHub Release"
+                            "LiquidMusic GitHub Release"
                         },
                     onClick = {
                         viewModel.setAlertData(
@@ -3275,4 +3313,62 @@ private fun ImportProgressDialog(
             }
         },
     )
+}
+
+/**
+ * A clickable section header that expands/collapses its content.
+ *
+ * Only one section is expanded at a time — tapping a different section collapses any
+ * currently-expanded one and expands the new one. Tapping the same section collapses it.
+ */
+@Composable
+private fun CollapsibleSettingsSection(
+    sectionKey: String,
+    title: String,
+    expandedSection: String?,
+    onToggle: (String?) -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val expanded = expandedSection == sectionKey
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onToggle(if (expanded) null else sectionKey)
+                    }
+                    .padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = typo().labelMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Icon(
+                imageVector = if (expanded) SimpIcons.KeyboardArrowDown else SimpIcons.KeyboardArrowDown,
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier =
+                    Modifier
+                        .size(20.dp)
+                        .rotate(if (expanded) 180f else 0f),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(content = content)
+        }
+    }
 }

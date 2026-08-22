@@ -27,6 +27,54 @@ tasks.register<Delete>("Clean") {
     delete(rootProject.layout.buildDirectory)
 }
 
+/**
+ * Reads the latest git tag and updates version-name / version-code in gradle/libs.versions.toml.
+ *
+ * Run: ./gradlew autoVersion
+ *
+ * Scheme:
+ *   versionName = stripped tag (e.g., "v1.2.3" → "1.2.3")
+ *   versionCode = (major*10000 + minor*100 + patch) * 10
+ */
+tasks.register("autoVersion") {
+    group = "versioning"
+    description = "Auto-bumps versionCode and versionName from the latest git tag"
+    doLast {
+        val toml = rootProject.file("gradle/libs.versions.toml")
+        val tag =
+            try {
+                providers.exec {
+                    commandLine("git", "describe", "--tags", "--abbrev=0")
+                }.standardOutput.asText.get().trim()
+            } catch (e: Exception) {
+                ""
+            }
+        val regex = Regex("""^v?(\d+)\.(\d+)\.(\d+)""")
+        val match = regex.find(tag)
+        val (name, code) =
+            if (match != null) {
+                val (major, minor, patch) = match.destructured
+                val versionName = "$major.$minor.$patch"
+                val versionCode = ((major.toInt() * 10000) + (minor.toInt() * 100) + patch.toInt()) * 10
+                versionName to versionCode.toString()
+            } else {
+                val text = toml.readText()
+                val current =
+                    Regex("""version-name\s*=\s*"([^"]+)"""").find(text)?.groupValues?.getOrNull(1)
+                        ?: "1.0.0"
+                current to
+                    Regex("""version-code\s*=\s*"([^"]+)"""").find(text)?.groupValues?.getOrNull(1) ?: "1"
+            }
+        val content = toml.readText()
+        val updated =
+            content
+                .replace(Regex("""version-name\s*=\s*"[^"]*""""), "version-name = \"$name\"")
+                .replace(Regex("""version-code\s*=\s*"[^"]*""""), "version-code = \"$code\"")
+        toml.writeText(updated)
+        println("autoVersion: version-name = \"$name\", version-code = \"$code\"")
+    }
+}
+
 subprojects {
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions {

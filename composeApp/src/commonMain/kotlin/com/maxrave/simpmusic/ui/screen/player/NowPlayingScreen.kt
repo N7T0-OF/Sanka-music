@@ -179,6 +179,7 @@ import com.maxrave.simpmusic.ui.theme.typo
 import com.maxrave.simpmusic.viewModel.LyricsProvider
 import com.maxrave.simpmusic.viewModel.NowPlayingBottomSheetUIEvent
 import com.maxrave.simpmusic.viewModel.NowPlayingBottomSheetViewModel
+import com.maxrave.simpmusic.viewModel.SettingsViewModel
 import com.maxrave.simpmusic.viewModel.SharedViewModel
 import com.maxrave.simpmusic.viewModel.UIEvent
 import kotlinx.coroutines.delay
@@ -282,6 +283,7 @@ fun NowPlayingScreen(
 fun NowPlayingScreenContent(
     sharedViewModel: SharedViewModel = koinInject(),
     mediaPlayerHandler: MediaPlayerHandler = koinInject(),
+    settingsViewModel: SettingsViewModel = koinViewModel(),
     navController: NavController,
     isExpanded: Boolean,
     dismissIcon: ImageVector,
@@ -302,6 +304,11 @@ fun NowPlayingScreenContent(
     val shouldShowVideo by sharedViewModel.getVideo.collectAsStateWithLifecycle()
     val translatedVoteState by sharedViewModel.translatedVoteState.collectAsStateWithLifecycle()
     val lyricsVoteState by sharedViewModel.lyricsVoteState.collectAsStateWithLifecycle()
+
+    // Player section visibility preferences
+    val showArtistSection by settingsViewModel.showArtistInPlayer.collectAsStateWithLifecycle()
+    val showDescriptionSection by settingsViewModel.showDescriptionInPlayer.collectAsStateWithLifecycle()
+    val showLyricsSection by settingsViewModel.showLyricsInPlayer.collectAsStateWithLifecycle()
 
     // Artwork Pager state — Spotify-style horizontal swipe between queue tracks.
     // The pager wraps the Canvas + Thumbnail layers. Controller layout below stays fixed.
@@ -2165,7 +2172,7 @@ fun NowPlayingScreenContent(
                     Column(Modifier.padding(horizontal = 20.dp)) {
                         // Lyrics Layout
                         AnimatedVisibility(
-                            visible = screenDataState.lyricsData != null,
+                            visible = screenDataState.lyricsData != null && showLyricsSection,
                             modifier = Modifier.padding(top = 10.dp),
                         ) {
                             ElevatedCard(
@@ -2309,7 +2316,7 @@ fun NowPlayingScreenContent(
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                        AnimatedVisibility(visible = screenDataState.songInfoData != null) {
+                        AnimatedVisibility(visible = screenDataState.songInfoData != null && showArtistSection) {
                             ElevatedCard(
                                 onClick = {
                                     val song = sharedViewModel.nowPlayingState.value?.songEntity
@@ -2407,7 +2414,7 @@ fun NowPlayingScreenContent(
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                        AnimatedVisibility(visible = screenDataState.songInfoData != null) {
+                        AnimatedVisibility(visible = screenDataState.songInfoData != null && showDescriptionSection) {
                             ElevatedCard(
                                 onClick = {},
                                 shape = RoundedCornerShape(8.dp),

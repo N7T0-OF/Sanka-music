@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ splash screen. The icon is the app launcher icon centred on a black
+         background. The post-splash theme (what the app uses after the splash) is set
+         via setTheme() in MainActivity, not here. -->
+    <style name="Theme.LiquidMusic.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimationDuration">400</item>
+        <item name="postSplashScreenTheme">@style/Theme.AppCompat.DayNight.NoActionBar</item>
+    </style>
+</resources>

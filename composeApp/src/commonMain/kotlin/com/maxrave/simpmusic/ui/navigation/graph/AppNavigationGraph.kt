@@ -3,11 +3,14 @@ package com.maxrave.simpmusic.ui.navigation.graph
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import com.maxrave.simpmusic.extension.getScreenSizeInfo
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,20 +40,39 @@ fun AppNavigationGraph(
     showNowPlayingSheet: () -> Unit = {},
     onScrolling: (onTop: Boolean) -> Unit = {},
 ) {
+    val screenInfo = getScreenSizeInfo()
+    val isLandscape = screenInfo.wDP > screenInfo.hDP
+
     NavHost(
         navController,
         startDestination = startDestination,
         enterTransition = {
-            fadeIn() + slideInHorizontally { -it }
+            if (isLandscape) {
+                fadeIn() + slideInVertically { it }
+            } else {
+                fadeIn() + slideInHorizontally { -it }
+            }
         },
         exitTransition = {
-            fadeOut() + slideOutHorizontally { it }
+            if (isLandscape) {
+                fadeOut() + slideOutVertically { it }
+            } else {
+                fadeOut() + slideOutHorizontally { it }
+            }
         },
         popEnterTransition = {
-            fadeIn() + slideInHorizontally { -it }
+            if (isLandscape) {
+                fadeIn() + slideInVertically { -it }
+            } else {
+                fadeIn() + slideInHorizontally { -it }
+            }
         },
         popExitTransition = {
-            fadeOut() + slideOutHorizontally { it }
+            if (isLandscape) {
+                fadeOut() + slideOutVertically { -it }
+            } else {
+                fadeOut() + slideOutHorizontally { it }
+            }
         },
     ) {
         // Bottom bar destinations

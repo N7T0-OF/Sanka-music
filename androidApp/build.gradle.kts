@@ -145,6 +145,9 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     implementation(libs.activity.compose)
 
+    // Splash Screen (Android 12+)
+    implementation(libs.core.splashscreen)
+
     // Custom Activity On Crash
     implementation(libs.customactivityoncrash)
 

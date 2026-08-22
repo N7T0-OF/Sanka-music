@@ -181,6 +181,13 @@ class SettingsViewModel(
     private var _enableLiquidGlass: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val enableLiquidGlass: StateFlow<Boolean> = _enableLiquidGlass
 
+    private var _showArtistInPlayer: MutableStateFlow<Boolean> = MutableStateFlow(true)
+    val showArtistInPlayer: StateFlow<Boolean> = _showArtistInPlayer
+    private var _showDescriptionInPlayer: MutableStateFlow<Boolean> = MutableStateFlow(true)
+    val showDescriptionInPlayer: StateFlow<Boolean> = _showDescriptionInPlayer
+    private var _showLyricsInPlayer: MutableStateFlow<Boolean> = MutableStateFlow(true)
+    val showLyricsInPlayer: StateFlow<Boolean> = _showLyricsInPlayer
+
     private val _explicitContentEnabled = MutableStateFlow(false)
     val explicitContentEnabled: StateFlow<Boolean> = _explicitContentEnabled
 
@@ -322,6 +329,9 @@ class SettingsViewModel(
         getBackupDownloaded()
         getUpdateChannel()
         getEnableLiquidGlass()
+        getShowArtistInPlayer()
+        getShowDescriptionInPlayer()
+        getShowLyricsInPlayer()
         getExplicitContentEnabled()
         getDiscordLoggedIn()
         getDiscordRichPresenceEnabled()
@@ -700,6 +710,48 @@ class SettingsViewModel(
         viewModelScope.launch {
             dataStoreManager.setEnableLiquidGlass(enableLiquidGlass)
             getEnableLiquidGlass()
+        }
+    }
+
+    private fun getShowArtistInPlayer() {
+        viewModelScope.launch {
+            dataStoreManager.showArtistInPlayer.collect { show ->
+                _showArtistInPlayer.value = show == DataStoreManager.TRUE
+            }
+        }
+    }
+
+    fun setShowArtistInPlayer(show: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setShowArtistInPlayer(show)
+        }
+    }
+
+    private fun getShowDescriptionInPlayer() {
+        viewModelScope.launch {
+            dataStoreManager.showDescriptionInPlayer.collect { show ->
+                _showDescriptionInPlayer.value = show == DataStoreManager.TRUE
+            }
+        }
+    }
+
+    fun setShowDescriptionInPlayer(show: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setShowDescriptionInPlayer(show)
+        }
+    }
+
+    private fun getShowLyricsInPlayer() {
+        viewModelScope.launch {
+            dataStoreManager.showLyricsInPlayer.collect { show ->
+                _showLyricsInPlayer.value = show == DataStoreManager.TRUE
+            }
+        }
+    }
+
+    fun setShowLyricsInPlayer(show: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setShowLyricsInPlayer(show)
         }
     }
 

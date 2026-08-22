@@ -1479,6 +1479,48 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val showArtistInPlayer: Flow<String>
+        get() =
+            settingsDataStore.data.map { preferences ->
+                preferences[SHOW_ARTIST_IN_PLAYER] ?: TRUE
+            }
+
+    override suspend fun setShowArtistInPlayer(show: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SHOW_ARTIST_IN_PLAYER] = if (show) TRUE else FALSE
+            }
+        }
+    }
+
+    override val showDescriptionInPlayer: Flow<String>
+        get() =
+            settingsDataStore.data.map { preferences ->
+                preferences[SHOW_DESCRIPTION_IN_PLAYER] ?: TRUE
+            }
+
+    override suspend fun setShowDescriptionInPlayer(show: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SHOW_DESCRIPTION_IN_PLAYER] = if (show) TRUE else FALSE
+            }
+        }
+    }
+
+    override val showLyricsInPlayer: Flow<String>
+        get() =
+            settingsDataStore.data.map { preferences ->
+                preferences[SHOW_LYRICS_IN_PLAYER] ?: TRUE
+            }
+
+    override suspend fun setShowLyricsInPlayer(show: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SHOW_LYRICS_IN_PLAYER] = if (show) TRUE else FALSE
+            }
+        }
+    }
+
     override val explicitContentEnabled: Flow<String> =
         settingsDataStore.data.map { preferences ->
             preferences[EXPLICIT_CONTENT_ENABLED] ?: TRUE
@@ -1754,6 +1796,9 @@ internal class DataStoreManagerImpl(
         val BACKUP_DOWNLOADED = stringPreferencesKey("backup_downloaded")
 
         val LIQUID_GLASS = stringPreferencesKey("liquid_glass")
+        val SHOW_ARTIST_IN_PLAYER = stringPreferencesKey("show_artist_in_player")
+        val SHOW_DESCRIPTION_IN_PLAYER = stringPreferencesKey("show_description_in_player")
+        val SHOW_LYRICS_IN_PLAYER = stringPreferencesKey("show_lyrics_in_player")
 
         val EXPLICIT_CONTENT_ENABLED = stringPreferencesKey("explicit_content_enabled")
 

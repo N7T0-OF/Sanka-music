@@ -1,7 +1,7 @@
 [versions]
 # App version
-version-name = "1.1.5"
-version-code = "60"
+version-name = "1.1.6"
+version-code = "66"
 
 android = "9.2.1"
 kotlin = "2.4.10"
@@ -46,6 +46,7 @@ desugaring = "2.1.5"
 koin-bom = "4.2.2"
 md = "0.43.0"
 haze = "1.7.2"
+core-splashscreen = "1.0.1"
 onetimepassword = "3.0.0"
 common = "1.22.1"
 json = "1.11.0"
@@ -142,6 +143,7 @@ coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines
 navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 easypermissions = { group = "pub.devrel", name = "easypermissions", version.ref = "easypermissions" }
+core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore-preferences" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging"}
 customactivityoncrash = { group = "cat.ereza", name = "customactivityoncrash", version.ref = "customactivityoncrash" }
