@@ -81,9 +81,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "SpaceKai v${{ github.ref_name }}"
+          name: "SpaceKai ${{ github.ref_name }}"
           body: |
-            ## SpaceKai v${{ github.ref_name }}
+            ## SpaceKai ${{ github.ref_name }}
 
             Application de streaming musical basée sur YouTube Music.
 
@@ -93,7 +93,7 @@ jobs:
             ```
 
             ### Installation
-            1. Télécharger `SpaceKai-v${{ github.ref_name }}.apk`
+            1. Télécharger `SpaceKai-${{ github.ref_name }}.apk`
             2. Installer sur votre appareil Android
 
             ---
