@@ -2437,7 +2437,7 @@ fun SettingScreen(
                 )
                 SettingItem(
                     title = stringResource(Res.string.author),
-                    subtitle = stringResource(Res.string.souanpt),
+                    subtitle = "Souanpt",
                     onClick = {
                         uriHandler.openUri("https://github.com/N7T0-OF")
                     },
