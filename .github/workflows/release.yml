@@ -29,9 +29,11 @@ jobs:
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
-          # Reduce heap from 5 GB to 3 GB for CI
-          sed -i 's/^org\.gradle\.jvmargs=.*/org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC/' gradle.properties
-          echo "=== Heap setting ===" && grep jvmargs gradle.properties
+          # Override the 5GB heap -> 3GB for CI runner
+          grep -v '^org.gradle.jvmargs=' gradle.properties > gradle.properties.tmp
+          mv gradle.properties.tmp gradle.properties
+          echo 'org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC -XX:MaxMetaspaceSize=512m' >> gradle.properties
+          echo "=== heap ===" && grep jvmargs gradle.properties && echo "=== RAM ===" && free -h
           ./gradlew androidApp:assembleRelease --no-configuration-cache
 
       - name: Decode keystore
