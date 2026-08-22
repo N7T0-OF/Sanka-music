@@ -32,6 +32,10 @@ interface DataStoreManager {
 
     suspend fun setVideoDownloadQuality(quality: String)
 
+    val downloadWiFiOnly: Flow<String>
+
+    suspend fun setDownloadWiFiOnly(wifiOnly: Boolean)
+
     val language: Flow<String>
 
     /**

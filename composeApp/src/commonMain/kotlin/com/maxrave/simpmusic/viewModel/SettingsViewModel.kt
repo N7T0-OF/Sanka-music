@@ -159,6 +159,8 @@ class SettingsViewModel(
     val crossfadeSkipAlbum: StateFlow<Boolean> = _crossfadeSkipAlbum
     private val _autoDownloadLikedSongs = MutableStateFlow<Boolean>(false)
     val autoDownloadLikedSongs: StateFlow<Boolean> = _autoDownloadLikedSongs
+    private val _downloadWiFiOnly = MutableStateFlow<Boolean>(true)
+    val downloadWiFiOnly: StateFlow<Boolean> = _downloadWiFiOnly
     private val _youtubeSubtitleLanguage = MutableStateFlow<String>("")
     val youtubeSubtitleLanguage: StateFlow<String> = _youtubeSubtitleLanguage
 
@@ -307,6 +309,7 @@ class SettingsViewModel(
         getCrossfadeDjMode()
         getCrossfadeSkipAlbum()
         getAutoDownloadLikedSongs()
+        getDownloadWiFiOnly()
         getContributorNameAndEmail()
         getBackupDownloaded()
         getUpdateChannel()
@@ -518,6 +521,20 @@ class SettingsViewModel(
             dataStoreManager.autoDownloadLikedSongs.collect { enabled ->
                 _autoDownloadLikedSongs.value = enabled == DataStoreManager.TRUE
             }
+        }
+    }
+
+    private fun getDownloadWiFiOnly() {
+        viewModelScope.launch {
+            dataStoreManager.downloadWiFiOnly.collect { enabled ->
+                _downloadWiFiOnly.value = enabled == DataStoreManager.TRUE
+            }
+        }
+    }
+
+    fun setDownloadWiFiOnly(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setDownloadWiFiOnly(enabled)
         }
     }
 

@@ -1,6 +1,8 @@
 package com.maxrave.media3.service.download
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
@@ -193,11 +195,31 @@ internal class DownloadUtils(
     /**
      * Use thumbnail to check video or audio
      */
+    /**
+     * Wi-Fi-only guard: when the "downloads over Wi-Fi only" preference is on and the device
+     * is not on an unmetered Wi-Fi connection, downloads are skipped until Wi-Fi returns.
+     */
+    private suspend fun isWifiOnlyBlocked(): Boolean {
+        val wifiOnly = dataStoreManager.downloadWiFiOnly.firstOrNull() == DataStoreManager.TRUE
+        if (!wifiOnly) return false
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val network = cm.activeNetwork ?: return true
+        val caps = cm.getNetworkCapabilities(network) ?: return true
+        val onWifi =
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        return !onWifi
+    }
+
     override suspend fun downloadTrack(
         videoId: String,
         title: String,
         thumbnail: String,
     ) {
+        if (isWifiOnlyBlocked()) {
+            Logger.w("Download", "Skipped $title — Wi-Fi only downloads enabled and device is on mobile data")
+            return
+        }
         var isVideo = false
         val request =
             ImageRequest

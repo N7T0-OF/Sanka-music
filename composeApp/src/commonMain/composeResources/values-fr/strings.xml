@@ -77,6 +77,8 @@
     <string name="prefer_320kbps_stream_description">Recherche automatique d'un flux audio 320 kbps lorsqu'il est disponible sur Internet. Utilisation de la qualité par défaut si aucun flux n'est trouvé.</string>
     <string name="download_quality">Qualité de téléchargement</string>
     <string name="video_download_quality">Qualité de téléchargement vidéo</string>
+    <string name="download_wifi_only">Télécharger uniquement en Wi-Fi</string>
+    <string name="download_wifi_only_description">Suspend les téléchargements en données mobiles et les reprend automatiquement au retour du Wi-Fi.</string>
     <string name="clear_downloaded_cache">Effacer le cache téléchargé</string>
     <string name="clear_thumbnail_cache">Effacer le cache des miniatures</string>
     <string name="add">Ajouter</string>

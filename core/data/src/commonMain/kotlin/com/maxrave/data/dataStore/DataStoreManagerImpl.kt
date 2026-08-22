@@ -156,6 +156,19 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val downloadWiFiOnly: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[DOWNLOAD_WIFI_ONLY] ?: TRUE
+        }
+
+    override suspend fun setDownloadWiFiOnly(wifiOnly: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[DOWNLOAD_WIFI_ONLY] = if (wifiOnly) TRUE else FALSE
+            }
+        }
+    }
+
     override val language: Flow<String> =
         settingsDataStore.data.map { preferences ->
             preferences[stringPreferencesKey(SELECTED_LANGUAGE)] ?: SUPPORTED_LANGUAGE.codes.first()
@@ -1613,6 +1626,7 @@ internal class DataStoreManagerImpl(
         val QUALITY = stringPreferencesKey("quality")
         val DOWNLOAD_QUALITY = stringPreferencesKey("download_quality")
         val VIDEO_DOWNLOAD_QUALITY = stringPreferencesKey("video_download_quality")
+        val DOWNLOAD_WIFI_ONLY = stringPreferencesKey("download_wifi_only")
         val NORMALIZE_VOLUME = stringPreferencesKey("normalize_volume")
         val SKIP_SILENT = stringPreferencesKey("skip_silent")
         val SAVE_STATE_OF_PLAYBACK = stringPreferencesKey("save_state_of_playback")
