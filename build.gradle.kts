@@ -63,7 +63,7 @@ tasks.register("autoVersion") {
                     Regex("""version-name\s*=\s*"([^"]+)"""").find(text)?.groupValues?.getOrNull(1)
                         ?: "1.0.0"
                 current to
-                    Regex("""version-code\s*=\s*"([^"]+)"""").find(text)?.groupValues?.getOrNull(1) ?: "1"
+                    (Regex("""version-code\s*=\s*"([^"]+)"""").find(text)?.groupValues?.getOrNull(1) ?: "1")
             }
         val content = toml.readText()
         val updated =

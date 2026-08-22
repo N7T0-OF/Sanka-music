@@ -128,6 +128,7 @@ import com.maxrave.simpmusic.ui.component.SettingItem
 import com.maxrave.simpmusic.ui.icon.ArrowBackIosNew
 import com.maxrave.simpmusic.ui.icon.Close
 import com.maxrave.simpmusic.ui.icon.Error
+import com.maxrave.simpmusic.ui.icon.KeyboardArrowDown
 import com.maxrave.simpmusic.ui.icon.PeopleAlt
 import com.maxrave.simpmusic.ui.icon.PlaylistAdd
 import com.maxrave.simpmusic.ui.icon.SimpIcons
@@ -317,6 +318,13 @@ import simpmusic.composeapp.generated.resources.orientation_landscape
 import simpmusic.composeapp.generated.resources.orientation_portrait
 import simpmusic.composeapp.generated.resources.other_app
 import simpmusic.composeapp.generated.resources.interaction
+import simpmusic.composeapp.generated.resources.player
+import simpmusic.composeapp.generated.resources.show_artist_section
+import simpmusic.composeapp.generated.resources.show_artist_section_description
+import simpmusic.composeapp.generated.resources.show_description_section
+import simpmusic.composeapp.generated.resources.show_description_section_description
+import simpmusic.composeapp.generated.resources.show_lyrics_section
+import simpmusic.composeapp.generated.resources.show_lyrics_section_description
 import simpmusic.composeapp.generated.resources.vibration
 import simpmusic.composeapp.generated.resources.vibration_description
 import simpmusic.composeapp.generated.resources.vibration_intensity
