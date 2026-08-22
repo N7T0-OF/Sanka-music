@@ -39,7 +39,7 @@ val coreDir = File(rootDir, "core")
 val serviceDir = File(rootDir, "core/service")
 val mediaDir = File(rootDir, "core/media")
 
-rootProject.name = "SpaceKai"
+rootProject.name = "SimpMusic"
 include(
     ":androidApp",
     ":composeApp",
