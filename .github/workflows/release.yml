@@ -86,8 +86,10 @@ jobs:
           echo "SHA-256: $SHA"
           ls -lh "$OUTPUT"
           
-          # Also build SHA256SUMS.txt
-          cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+          # Clean intermediates, keep ONLY the final APK in dist/
+          rm -f dist/aligned.apk dist/*.idsig
+          # Build SHA256SUMS.txt from the final APK only
+          cd dist && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
