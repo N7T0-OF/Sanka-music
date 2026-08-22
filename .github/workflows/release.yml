@@ -4,13 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build & publish
+  # ─── Android ────────────────────────────────────────────────────────────
+  android:
+    name: Android APK
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,7 +41,8 @@ jobs:
             echo "$BASE_64_SIGNING_KEY" | base64 -d > spacekai.jks
             echo "Keystore decoded"
           else
-            echo "::warning::No keystore secret — APK will be unsigned"
+            echo "::error::Android release signing is not configured. Add BASE_64_SIGNING_KEY secret."
+            exit 1
           fi
 
       - name: Sign APK
@@ -49,6 +52,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Android signing secrets missing (KEY_STORE_PASSWORD, ALIAS, KEY_PASSWORD)."
+            exit 1
+          fi
           mkdir -p dist
           APK="$(find androidApp/build/outputs/apk/release -name "*.apk" -not -name "*unsigned*" | head -1)"
           if [ -z "$APK" ]; then
@@ -58,46 +65,270 @@ jobs:
           VERSION="${GITHUB_REF##*/v}"
           OUTPUT="dist/SpaceKai-v${VERSION}.apk"
 
-          if [ -f spacekai.jks ] && [ -n "$KEYSTORE_PASSWORD" ]; then
-            BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-            "$BT/zipalign" -f 4 "$APK" dist/aligned.apk
-            "$BT/apksigner" sign \
-              --ks spacekai.jks \
-              --ks-key-alias "$KEY_ALIAS" \
-              --ks-pass "pass:$KEYSTORE_PASSWORD" \
-              --key-pass "pass:$KEY_PASSWORD" \
-              --out "$OUTPUT" \
-              dist/aligned.apk
-            echo "Signed OK"
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$BT/zipalign" -f 4 "$APK" dist/aligned.apk
+          "$BT/apksigner" sign \
+            --ks spacekai.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out "$OUTPUT" \
+            dist/aligned.apk
+          echo "Signed OK"
+          ls -lh "$OUTPUT"
+
+      - name: Verify APK signature
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$BT/apksigner" verify --verbose dist/SpaceKai-*.apk
+          echo "Signature verified"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: dist/SpaceKai-*.apk
+
+  # ─── Windows ───────────────────────────────────────────────────────────
+  windows:
+    name: Windows MSIX
+    runs-on: windows-latest
+    needs: []
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "microsoft"
+          cache: 'gradle'
+
+      - name: Build desktop distributable (Conveyor)
+        run: |
+          chmod +x ./gradlew 2>/dev/null || true
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+
+      - name: Collect MSIX + install.bat + cert
+        run: |
+          VERSION="${GITHUB_REF##*/v}"
+          mkdir -p dist
+          # Conveyor outputs to output/ directory by default
+          MSIX="$(find output -name "*.msix" | head -1)"
+          CERT="$(find output -name "*.crt" | head -1)"
+          if [ -n "$MSIX" ]; then
+            cp "$MSIX" "dist/SpaceKai-v${VERSION}.msix"
+            cp scripts/windows/install.bat dist/
+            if [ -n "$CERT" ]; then
+              cp "$CERT" dist/spacekai.crt
+            fi
+            ls -lh dist/
           else
-            cp "$APK" "$OUTPUT"
+            echo "::warning::No MSIX produced — Conveyor Windows build may need configuration."
+            echo "Build not configured" > dist/windows-skipped.txt
           fi
 
-          SHA=$(sha256sum "$OUTPUT" | cut -d' ' -f1)
-          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
-          echo "SHA-256: $SHA"
-          ls -lh dist/
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix
+          path: dist/
+
+  # ─── macOS ─────────────────────────────────────────────────────────────
+  macos:
+    name: macOS DMG
+    runs-on: macos-latest
+    needs: []
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "microsoft"
+          cache: 'gradle'
+
+      - name: Install create-dmg
+        run: brew install create-dmg 2>/dev/null || echo "::warning::create-dmg unavailable — DMG wrapping skipped."
+
+      - name: Build macOS app (Conveyor)
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+
+      - name: Wrap DMG
+        run: |
+          VERSION="${GITHUB_REF##*/v}"
+          mkdir -p dist
+          # Look for .app in output/
+          APP="$(find output -name "*.app" -maxdepth 2 | head -1)"
+          if [ -n "$APP" ] && command -v create-dmg &>/dev/null; then
+            bash scripts/wrap-mac-dmg.sh \
+              "$APP" \
+              composeApp/icon/dmg-bg-1400x800.png \
+              composeApp/icon/circle_app_icon.icns \
+              "dist/SpaceKai-v${VERSION}.dmg"
+            ls -lh dist/
+          elif [ -n "$APP" ]; then
+            echo "::warning::create-dmg not installed — shipping raw .app in zip."
+            (cd "$(dirname "$APP")" && zip -r "$OLDPWD/dist/SpaceKai-v${VERSION}-mac.zip" "$(basename "$APP")")
+            ls -lh dist/
+          else
+            echo "::warning::No .app produced — Conveyor macOS build may need configuration."
+            echo "Build not configured" > dist/macos-skipped.txt
+          fi
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: dist/
+
+  # ─── Linux ─────────────────────────────────────────────────────────────
+  linux:
+    name: Linux AppImage
+    runs-on: ubuntu-latest
+    needs: []
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "microsoft"
+          cache: 'gradle'
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool
+
+      - name: Build Linux app (Conveyor)
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+
+      - name: Wrap AppImage
+        run: |
+          VERSION="${GITHUB_REF##*/v}"
+          mkdir -p dist
+          LINUX_APP="$(find output -name "linux-app" -type d | head -1)"
+          if [ -n "$LINUX_APP" ] && [ -f /tmp/appimagetool ]; then
+            export ARCH=x86_64
+            /tmp/appimagetool "$LINUX_APP" "dist/SpaceKai-v${VERSION}.AppImage"
+            chmod +x "dist/SpaceKai-v${VERSION}.AppImage"
+            ls -lh dist/
+          else
+            echo "::warning::No linux-app produced — Conveyor Linux build may need configuration."
+            echo "Build not configured" > dist/linux-skipped.txt
+          fi
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/
+
+  # ─── Combine & Release ─────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [android, windows, macos, linux]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Collect all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          VERSION="${GITHUB_REF##*/v}"
+
+          # Collect all files
+          find artifacts -type f ! -name "*-skipped.txt" -exec cp {} release-assets/ \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Release assets ==="
+          ls -lh release-assets/ 2>/dev/null || echo "(none)"
+
+          # Generate SHA256SUMS
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt 2>/dev/null || echo "(no files)" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Build release notes
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF##*/v}"
+          cat > /tmp/release-notes.md << 'NOTES_EOF'
+          ## 🎵 SpaceKai __VERSION__
+
+          Application de streaming musical basée sur YouTube Music.
+
+          ### Nouveautés
+
+          - 🎵 Synchronisation des playlists Spotify (login existant sp_dc)
+          - 🎨 UI de sélection et import de playlists Spotify
+          - 🔐 Support OAuth refresh token
+          - 🎨 Nouveau mini-player compact
+          - 🎨 Paramètres réorganisés
+          - 🎨 Barre d'action personnalisable
+          - 🎨 Support Dynamic Color Android
+          - 📶 Option « Téléchargements uniquement en Wi-Fi »
+
+          ### Corrections
+
+          - 🐛 Correction du bug « Spotify non connecté » après login
+          - 🐛 Correction du nom de release (double « v »)
+          - ⚡ Optimisation du chargement des playlists
+
+          ### Installation
+
+          #### 📱 Android
+          Télécharger `SpaceKai-__VERSION__.apk` → Installer directement.
+
+          #### 🪟 Windows
+          Décompresser le zip, puis double-cliquer sur `install.bat`.
+
+          #### 🍎 macOS
+          Ouvrir le fichier `.dmg` et glisser SpaceKai dans Applications.
+
+          #### 🐧 Linux
+          Rendre le fichier `.AppImage` exécutable puis le lancer.
+
+          ### 🔐 Vérification
+          Voir `SHA256SUMS.txt` pour les sommes de contrôle.
+
+          ---
+          *Basé sur SimpMusic (GPL-3.0) — Par Souanpt*
+          NOTES_EOF
+
+          sed -i "s/__VERSION__/v${VERSION}/g" /tmp/release-notes.md
+          cat /tmp/release-notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "SpaceKai ${{ github.ref_name }}"
-          body: |
-            ## SpaceKai ${{ github.ref_name }}
-
-            Application de streaming musical basée sur YouTube Music.
-
-            ### SHA-256
-            ```
-            ${{ steps.sign.outputs.sha256 }}
-            ```
-
-            ### Installation
-            1. Télécharger `SpaceKai-${{ github.ref_name }}.apk`
-            2. Installer sur votre appareil Android
-
-            ---
-            *Basé sur SimpMusic (GPL-3.0)*
-          files: dist/SpaceKai-v*.apk
+          body_path: /tmp/release-notes.md
+          files: release-assets/*
           draft: false
           prerelease: false

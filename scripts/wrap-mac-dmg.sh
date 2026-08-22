@@ -67,7 +67,7 @@ RW_DMG="$(mktemp -u "$(dirname "$OUT_DMG")/.simpmusic-rw-XXXX").dmg"
 
 echo "[wrap-mac-dmg] create-dmg → $TMP_DMG"
 create-dmg \
-  --volname "SimpMusic" \
+  --volname "SpaceKai" \
   --window-pos 200 120 \
   --window-size 1400 800 \
   --icon-size 192 \
