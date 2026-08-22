@@ -126,7 +126,7 @@
     <string name="developer_blog">Blog des Développeurs</string>
     <string name="developer_blog_tagline">Consultez les notes des développeurs, les tutoriels &amp; les coulisses</string>
     <string name="blog_promo_title">Une nouveauté du développeur</string>
-    <string name="blog_promo_message">Je viens de lancer mon blog personnel sur maxrave.dev — j'y partage l'histoire de SimpMusic, des analyses approfondies sur les technologies musicales et des notes d'ingénierie. N'hésitez pas à y jeter un œil si ça vous intéresse. ✨</string>
+    <string name="blog_promo_message">Je viens de lancer mon blog personnel sur maxrave.dev — j'y partage l'histoire de SpaceKai, des analyses approfondies sur les technologies musicales et des notes d'ingénierie. N'hésitez pas à y jeter un œil si ça vous intéresse. ✨</string>
     <string name="visit_blog">Consultez le blog</string>
     <string name="paypal">PayPal</string>
     <string name="title">Titre</string>
@@ -145,7 +145,7 @@
     <string name="albums_inArtist">Albums</string>
     <string name="singles_inArtist">Singles</string>
     <string name="fans_might_also_like_inArtist">Vous aimeriez peut-être aussi</string>
-    <string name="crash_log">SimpMusic a planté. Désolé pour ce problème…\nEnvoyez le crash-log au développeur.</string>
+    <string name="crash_log">SpaceKai a planté. Désolé pour ce problème…\nEnvoyez le crash-log au développeur.</string>
     <string name="crash">Plantage</string>
     <string name="send">Envoyer</string>
     <string name="mail_subject">Signaler un plantage</string>
@@ -204,7 +204,7 @@
     <string name="what_segments_will_be_skipped">Quels sont les segments à ignorer ?</string>
     <string name="save">Sauvegarder</string>
     <string name="saved">Sauvegarde</string>
-    <string name="sponsor_block_intro">SponsorBlock est un système qui permet de sauter les parties gênantes des vidéos YouTube.\nPlus d'informations : https://sponsor.ajay.app/\nDans SimpMusic, SponsorBlock n'est disponible que lorsque l'appareil est en ligne.</string>
+    <string name="sponsor_block_intro">SponsorBlock est un système qui permet de sauter les parties gênantes des vidéos YouTube.\nPlus d'informations : https://sponsor.ajay.app/\nDans SpaceKai, SponsorBlock n'est disponible que lorsque l'appareil est en ligne.</string>
     <string name="skip_sponsor_part_of_video">Ignorer la partie sponsorisée de la vidéo</string>
     <string name="customactivityoncrash_error_activity_error_occurred_explanation">Une erreur inattendue s'est produite. Désolé pour la gêne occasionnée…</string>
     <string name="customactivityoncrash_error_activity_restart_app">Redémarrer l'application</string>
@@ -245,7 +245,7 @@
     <string name="saved_to_local_playlist">Enregistré dans la playlist locale</string>
     <string name="if_you_want_to_unsync_this_playlist_please_go_to_local_playlist">si vous souhaitez désynchroniser cette playlist, veuillez accéder à la playlist locale.</string>
     <string name="log_in_to_get_YouTube_playlist">Connectez-vous pour obtenir une playlist YouTube.</string>
-    <string name="sync_playlist_warning">SimpMusic va créer une playlist YouTube Music automatiquement. Êtes-vous sûr ?</string>
+    <string name="sync_playlist_warning">SpaceKai va créer une playlist YouTube Music automatiquement. Êtes-vous sûr ?</string>
     <string name="syncing">Synchronisation</string>
     <string name="unsync_playlist_warning">"Désynchroniser cette playlist ? Cette playlist ne sera pas supprimée de YouTube Music."</string>
     <string name="unsyncing">Désynchronisation</string>
@@ -262,7 +262,7 @@
     <string name="email">E-mail</string>
     <string name="password">Mot de passe</string>
     <string name="please_enter_your_email_and_password">Veuillez entrer votre e-mail et votre mot de passe.</string>
-    <string name="translation_language_message">Saisissez le code de langue (par exemple : en) (2 lettres). Si vous souhaitez définir la même langue que celle de SimpMusic, veuillez laisser la zone d'édition vide.</string>
+    <string name="translation_language_message">Saisissez le code de langue (par exemple : en) (2 lettres). Si vous souhaitez définir la même langue que celle de SpaceKai, veuillez laisser la zone d'édition vide.</string>
     <string name="invalid_language_code">Code de langue invalide</string>
     <string name="lyrics_provider_youtube">Paroles fournies par YouTube</string>
     <string name="lyrics_provider_betterlyrics">Paroles fournies par BetterLyrics</string>
@@ -320,7 +320,7 @@
     <string name="enable_spotify_lyrics">Activer les paroles Spotify</string>
     <string name="spotify_lyrícs_info">Plus de paroles sans traduction</string>
     <string name="enable_canvas">Activer la toile</string>
-    <string name="canvas_info">Afficher la toile Spotify dans SimpMusic</string>
+    <string name="canvas_info">Afficher la toile Spotify dans SpaceKai</string>
     <string name="spotify_lyrics_provider">Paroles fournies par Spotify</string>
     <string name="offline_mode">Mode hors-ligne</string>
     <string name="added_to_youtube_liked">Ajouté aux favoris YouTube</string>
@@ -355,7 +355,7 @@
     <string name="theme_mode_light">Clair</string>
     <string name="theme_color">Couleur du thème</string>
     <string name="theme_color_default">Par défaut</string>
-    <string name="theme_color_wallpaper">Fond d'écran</string>
+    <string name="theme_color_wallpaper">Couleurs du téléphone</string>
     <string name="theme_color_custom">Personnalisé</string>
     <string name="custom_color">Couleur personnalisée</string>
     <string name="translucent_bottom_navigation_bar">Barre de navigation inférieure translucide</string>
@@ -378,7 +378,7 @@
     <string name="loading">Chargement</string>
     <string name="updating">Mise à jour</string>
     <string name="go_to_log_in_page">Accéder à la page de connexion</string>
-    <string name="log_in_warning">YouTube Music nécessite désormais que vous vous connectiez pour diffuser de la musique. Piped Instance ne peut parfois pas fonctionner non plus. Vous devez vous connecter à YouTube pour bénéficier d'une meilleure expérience avec SimpMusic.</string>
+    <string name="log_in_warning">YouTube Music nécessite désormais que vous vous connectiez pour diffuser de la musique. Piped Instance ne peut parfois pas fonctionner non plus. Vous devez vous connecter à YouTube pour bénéficier d'une meilleure expérience avec SpaceKai.</string>
     <string name="spotify_canvas_cache">Cache de la toile Spotify</string>
     <string name="clear_canvas_cache">Vider le cache de la toile</string>
     <string name="proxy">Proxy</string>
@@ -418,8 +418,8 @@
     <string name="other_version">Autre version</string>
     <string name="later">Plus tard</string>
     <string name="give_a_star">Donner une étoile</string>
-    <string name="enjoying_simpmusic">Vous appréciez SimpMusic</string>
-    <string name="if_you_enjoy_using_simpmusic_star_simpmusic_on_github_or_leave_a_review_on">Si vous aimez utiliser SimpMusic, donnez une étoile à SimpMusic sur GitHub ou laissez un avis sur</string>
+    <string name="enjoying_simpmusic">Vous appréciez SpaceKai</string>
+    <string name="if_you_enjoy_using_simpmusic_star_simpmusic_on_github_or_leave_a_review_on">Si vous aimez utiliser SpaceKai, donnez une étoile à SpaceKai sur GitHub ou laissez un avis sur</string>
     <string name="if_you_love_my_work_consider">"Si vous aimez mon travail, considérez "</string>
     <string name="buying_me_a_coffee">m'offrir un café.</string>
     <string name="fade_audio_effect">Effet de fondu audio</string>
@@ -479,7 +479,7 @@
     <string name="backup_downloaded">Sauvegarder les données téléchargées</string>
     <string name="backup_downloaded_description">Sauvegarder toutes les données des titres téléchargés</string>
     <string name="auto_backup">Sauvegarde automatique</string>
-    <string name="auto_backup_description">Sauvegardez automatiquement vos données dans le dossier Téléchargements/SimpMusic</string>
+    <string name="auto_backup_description">Sauvegardez automatiquement vos données dans le dossier Téléchargements/SpaceKai</string>
     <string name="backup_frequency">Fréquence des sauvegardes</string>
     <string name="daily">Quotidienne</string>
     <string name="weekly">Hebdomadaire</string>
@@ -518,8 +518,8 @@
     <string name="intro_login_to_lastfm">Connectez-vous pour enregistrer ce que vous écoutez</string>
     <string name="enable_scrobbling">Activer le scrobbling</string>
     <string name="scrobbling_info">Envoyez ce que vous écoutez sur votre profil Last.fm</string>
-    <string name="lastfm_login_step_1">Ouvrez la page Last.fm et autorisez SimpMusic à accéder à votre compte.</string>
-    <string name="lastfm_login_step_2">SimpMusic se relance automatiquement dès que vous lui avez accordé l'accès.</string>
+    <string name="lastfm_login_step_1">Ouvrez la page Last.fm et autorisez SpaceKai à accéder à votre compte.</string>
+    <string name="lastfm_login_step_2">SpaceKai se relance automatiquement dès que vous lui avez accordé l'accès.</string>
     <string name="lastfm_open_authorize_page">Ouvrir Last.fm</string>
     <string name="lastfm_login_failed">Impossible de se connecter à Last.fm. Veuillez réessayer.</string>
     <string name="lastfm_paste_callback_title">Ça n'est pas revenu automatiquement ?</string>
@@ -555,7 +555,7 @@
     <string name="downvote">Vote négatif</string>
     <string name="vote_submitted">Merci d'avoir voté pour ces paroles !</string>
     <string name="vote_error">Échec de la soumission</string>
-    <string name="open_app">Ouvrir SimpMusic</string>
+    <string name="open_app">Ouvrir SpaceKai</string>
     <string name="close_miniplayer">Fermer le mini-lecteur</string>
     <string name="open_miniplayer">Ouvrir le mini-lecteur</string>
     <string name="quit_app">Quitter l'application</string>

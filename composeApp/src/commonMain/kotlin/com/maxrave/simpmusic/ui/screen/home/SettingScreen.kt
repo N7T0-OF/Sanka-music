@@ -55,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Slider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -193,7 +194,6 @@ import simpmusic.composeapp.generated.resources.balance_media_loudness
 import simpmusic.composeapp.generated.resources.better_lyrics
 import simpmusic.composeapp.generated.resources.blog_notification_description
 import simpmusic.composeapp.generated.resources.blog_notification_title
-import simpmusic.composeapp.generated.resources.buy_me_a_coffee
 import simpmusic.composeapp.generated.resources.cancel
 import simpmusic.composeapp.generated.resources.canvas_info
 import simpmusic.composeapp.generated.resources.categories_sponsor_block
@@ -231,7 +231,6 @@ import simpmusic.composeapp.generated.resources.description_and_licenses
 import simpmusic.composeapp.generated.resources.developer_blog
 import simpmusic.composeapp.generated.resources.developer_blog_tagline
 import simpmusic.composeapp.generated.resources.discord_integration
-import simpmusic.composeapp.generated.resources.donation
 import simpmusic.composeapp.generated.resources.download_quality
 import simpmusic.composeapp.generated.resources.downloaded_cache
 import simpmusic.composeapp.generated.resources.enable_canvas
@@ -1187,68 +1186,72 @@ fun SettingScreen(
                 )
                 AnimatedVisibility(visible = crossfadeEnabled) {
                     Column {
-                        SettingItem(
-                            title = stringResource(Res.string.crossfade_duration),
-                            subtitle =
-                                if (castState.isRemote) {
-                                    stringResource(Res.string.not_available_while_casting)
-                                } else if (crossfadeDuration == DataStoreManager.CROSSFADE_DURATION_AUTO) {
-                                    stringResource(Res.string.crossfade_auto)
-                                } else {
-                                    "${crossfadeDuration / 1000}s"
-                                },
-                            isEnable = !castState.isRemote,
-                            onClick = {
-                                viewModel.setAlertData(
-                                    SettingAlertState(
-                                        title = runBlocking { getString(Res.string.crossfade_duration) },
-                                        selectOne =
-                                            SettingAlertState.SelectData(
-                                                listSelect =
-                                                    listOf(
-                                                        (crossfadeDuration == DataStoreManager.CROSSFADE_DURATION_AUTO) to
-                                                            runBlocking { getString(Res.string.crossfade_auto) },
-                                                        (crossfadeDuration == 1000) to "1s",
-                                                        (crossfadeDuration == 2000) to "2s",
-                                                        (crossfadeDuration == 3000) to "3s",
-                                                        (crossfadeDuration == 5000) to "5s",
-                                                        (crossfadeDuration == 8000) to "8s",
-                                                        (crossfadeDuration == 10000) to "10s",
-                                                        (crossfadeDuration == 12000) to "12s",
-                                                        (crossfadeDuration == 15000) to "15s",
-                                                        (crossfadeDuration == 20000) to "20s",
-                                                        (crossfadeDuration == 30000) to "30s",
-                                                    ),
-                                            ),
-                                        confirm =
-                                            runBlocking { getString(Res.string.change) } to { state ->
-                                                val duration =
-                                                    when (state.selectOne?.getSelected()) {
-                                                        runBlocking {
-                                                            getString(
-                                                                Res.string.crossfade_auto,
-                                                            )
-                                                        },
-                                                        -> DataStoreManager.CROSSFADE_DURATION_AUTO
-                                                        "1s" -> 1000
-                                                        "2s" -> 2000
-                                                        "3s" -> 3000
-                                                        "5s" -> 5000
-                                                        "8s" -> 8000
-                                                        "10s" -> 10000
-                                                        "12s" -> 12000
-                                                        "15s" -> 15000
-                                                        "20s" -> 20000
-                                                        "30s" -> 30000
-                                                        else -> 5000
-                                                    }
-                                                viewModel.setCrossfadeDuration(duration)
-                                            },
-                                        dismiss = runBlocking { getString(Res.string.cancel) },
-                                    ),
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(Res.string.crossfade_duration),
+                                    style = typo().bodyLarge,
                                 )
-                            },
-                        )
+                                Text(
+                                    text =
+                                        if (castState.isRemote) {
+                                            stringResource(Res.string.not_available_while_casting)
+                                        } else if (crossfadeDuration == DataStoreManager.CROSSFADE_DURATION_AUTO) {
+                                            stringResource(Res.string.crossfade_auto)
+                                        } else {
+                                            "${crossfadeDuration / 1000} s"
+                                        },
+                                    style = typo().bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            var crossfadeSliderValue by remember(crossfadeDuration) {
+                                mutableStateOf(
+                                    (crossfadeDuration / 1000).toFloat().coerceIn(0f, 30f),
+                                )
+                            }
+                            Slider(
+                                value = crossfadeSliderValue,
+                                onValueChange = { crossfadeSliderValue = it },
+                                onValueChangeFinished = {
+                                    viewModel.setCrossfadeDuration(
+                                        crossfadeSliderValue.toInt() * 1000,
+                                    )
+                                },
+                                valueRange = 0f..30f,
+                                steps = 29,
+                                enabled = !castState.isRemote,
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = stringResource(Res.string.crossfade_auto),
+                                    style = typo().labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = "15 s",
+                                    style = typo().labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = "30 s",
+                                    style = typo().labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
 //                        if (getPlatform() == Platform.Android) {
                         SettingItem(
                             title = stringResource(Res.string.crossfade_dj_mode),
@@ -2463,13 +2466,6 @@ fun SettingScreen(
                         switch = (blogNotificationEnabled to { viewModel.setBlogNotificationEnabled(it) }),
                     )
                 }
-                SettingItem(
-                    title = stringResource(Res.string.buy_me_a_coffee),
-                    subtitle = stringResource(Res.string.donation),
-                    onClick = {
-                        uriHandler.openUri("https://ko-fi.com/souanpt")
-                    },
-                )
                 SettingItem(
                     title = stringResource(Res.string.third_party_libraries),
                     subtitle = stringResource(Res.string.description_and_licenses),
