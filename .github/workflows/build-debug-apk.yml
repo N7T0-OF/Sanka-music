@@ -24,39 +24,26 @@ jobs:
           cache: 'gradle'
 
       - name: Build debug APK
-        id: build
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
           echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
-          ./gradlew androidApp:assembleDebug --no-configuration-cache --stacktrace 2>&1 | tee /tmp/build-output.log
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-        continue-on-error: true
+          ./gradlew androidApp:assembleDebug --no-configuration-cache
 
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: /tmp/build-output.log
-          if-no-files-found: warn
-
-      - name: Show last 80 lines of build log
-        if: always()
+      - name: Find APK files
         run: |
-          echo "=== BUILD LOG (last 80 lines) ==="
-          tail -80 /tmp/build-output.log 2>/dev/null || echo "No log file"
-
-      - name: Fail if build failed
-        if: steps.build.outputs.exit_code != '0'
-        run: |
-          echo "Build failed with exit code: ${{ steps.build.outputs.exit_code }}"
-          exit 1
+          echo "=== Searching for APK files ==="
+          find androidApp/build/outputs -name "*.apk" 2>/dev/null || echo "No APK in androidApp"
+          echo "---"
+          find composeApp/build/outputs -name "*.apk" 2>/dev/null || echo "No APK in composeApp"
+          echo "---"
+          find . -name "*.apk" -not -path "./.gradle/*" 2>/dev/null | head -20 || echo "No APK anywhere"
 
       - name: Upload Debug APK
-        if: steps.build.outputs.exit_code == '0'
         uses: actions/upload-artifact@v4
         with:
           name: LiquidFlow-debug-apk
-          path: androidApp/build/outputs/apk/debug/*.apk
+          path: |
+            androidApp/build/outputs/**/*.apk
+            composeApp/build/outputs/**/*.apk
           if-no-files-found: error
