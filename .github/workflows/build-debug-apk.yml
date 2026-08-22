@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-debug:
-    name: Build debug APK (installable)
+    name: Build debug APK
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,27 +28,28 @@ jobs:
           distribution: "microsoft"
           cache: 'gradle'
 
-      - name: Compile (verbose, stop on first error)
+      - name: Check Gradle dependencies
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
           echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
-          ./gradlew androidApp:compileFossDebugKotlin --no-configuration-cache --stacktrace --info 2>&1 | tail -200
+          ./gradlew androidApp:dependencies --configuration fossDebugCompileClasspath --no-configuration-cache 2>&1 | tail -50
         continue-on-error: true
 
-      - name: Build debug APK (FOSS, no Sentry)
+      - name: Compile
+        id: compile
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
           echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
-          ./gradlew androidApp:assembleDebug --no-configuration-cache --stacktrace 2>&1 | tail -300
+          ./gradlew androidApp:compileFossDebugKotlin --no-configuration-cache --stacktrace 2>&1 | tail -150
 
-      - name: Find APK
-        id: find-apk
+      - name: Assemble
         run: |
-          APK=$(find androidApp/build/outputs/apk/debug -name "*.apk" | head -1)
-          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
-          echo "Found APK: $APK"
+          chmod +x ./gradlew
+          echo "isFullBuild=false" >> ./gradle.properties
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
+          ./gradlew androidApp:assembleDebug --no-configuration-cache --stacktrace 2>&1 | tail -100
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
