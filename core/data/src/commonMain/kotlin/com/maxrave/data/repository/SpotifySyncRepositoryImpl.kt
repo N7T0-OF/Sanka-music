@@ -7,7 +7,6 @@ import com.maxrave.domain.manager.DataStoreManager
 import com.maxrave.domain.repository.SpotifyPlaylistItem
 import com.maxrave.domain.repository.SpotifySyncProgress
 import com.maxrave.domain.repository.SpotifySyncRepository
-import com.maxrave.domain.utils.MusicVideoType
 import com.maxrave.kotlinytmusicscraper.YouTube
 import com.maxrave.kotlinytmusicscraper.models.SongItem
 import com.maxrave.logger.Logger
@@ -83,7 +82,7 @@ internal class SpotifySyncRepositoryImpl(
                 try {
                     val r = youtube.search("${t.artists.joinToString(" ") { it.name }} ${t.name}", YouTube.SearchFilter.FILTER_SONG)
                     val first = r.getOrNull()?.items?.firstOrNull()
-                    if (first is SongItem) { songs.add(SongEntity(videoId = first.id, albumId = null, albumName = null, artistId = first.artists.mapNotNull { it.id }.takeIf { it.isNotEmpty() }, artistName = first.artists.map { it.name }.takeIf { it.isNotEmpty() }, duration = first.duration?.toString() ?: "", durationSeconds = first.duration ?: 0, isAvailable = true, isExplicit = first.explicit, likeStatus = "", thumbnails = first.thumbnail, title = first.title, videoType = MusicVideoType.MUSIC_VIDEO_TYPE_ATV_WATCH, category = null, resultType = null)); vids.add(first.id) } else skip++
+                    if (first is SongItem) { songs.add(SongEntity(videoId = first.id, albumId = null, albumName = null, artistId = first.artists.mapNotNull { it.id }.takeIf { it.isNotEmpty() }, artistName = first.artists.map { it.name }.takeIf { it.isNotEmpty() }, duration = first.duration?.toString() ?: "", durationSeconds = first.duration ?: 0, isAvailable = true, isExplicit = first.explicit, likeStatus = "", thumbnails = first.thumbnail, title = first.title, videoType = "MUSIC_VIDEO_TYPE_ATV", category = null, resultType = null)); vids.add(first.id) } else skip++
                 } catch (_: Exception) { skip++ }
             }
             if (songs.isNotEmpty()) localDataSource.insertSongs(songs)
