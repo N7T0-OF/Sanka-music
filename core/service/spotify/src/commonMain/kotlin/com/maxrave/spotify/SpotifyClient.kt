@@ -24,6 +24,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.submitForm
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
@@ -242,17 +243,17 @@ class SpotifyClient {
 
     suspend fun refreshOAuthAccessToken(
         refreshToken: String,
-    ) = spotifyClient.post("https://accounts.spotify.com/api/token") {
-        userAgent(USER_AGENT)
-        contentType(ContentType.Application.FormUrlEncoded)
-        header("Accept", "application/json")
-        setBody(
+    ) = spotifyClient.submitForm(
+        url = "https://accounts.spotify.com/api/token",
+        formParameters =
             Parameters.build {
                 append("grant_type", "refresh_token")
                 append("refresh_token", refreshToken)
                 append("client_id", SPOTIFY_CLIENT_ID)
             },
-        )
+    ) {
+        userAgent(USER_AGENT)
+        header("Accept", "application/json")
     }
 
     suspend fun getSpotifyUserPlaylists(
