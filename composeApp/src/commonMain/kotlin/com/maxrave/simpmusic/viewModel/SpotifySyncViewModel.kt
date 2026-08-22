@@ -1,5 +1,6 @@
 package com.maxrave.simpmusic.viewModel
 
+import androidx.lifecycle.viewModelScope
 import com.maxrave.domain.repository.SpotifyPlaylistItem
 import com.maxrave.domain.repository.SpotifySyncProgress
 import com.maxrave.domain.repository.SpotifySyncRepository
