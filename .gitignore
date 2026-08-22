@@ -48,3 +48,6 @@ sentry.properties
 /output/
 .claude/
 .freebuff/
+/liquidflow.jks
+/key_base64.txt
+/java_pid*.hprof
