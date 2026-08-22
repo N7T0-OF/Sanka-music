@@ -54,7 +54,7 @@ jobs:
           if [ -f liquidflow.jks ] && [ -n "$KEYSTORE_PASSWORD" ]; then
             BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
             for APK in androidApp/build/outputs/apk/release/*-release-unsigned.apk; do
-              ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-release-unsigned//')
+              ARCH=$(basename "$APK" .apk | sed 's/androidApp-//; s/-release-unsigned$//')
               "$BT/zipalign" -f 4 "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}.apk"
               "$BT/apksigner" sign \
                 --ks liquidflow.jks \
@@ -67,14 +67,14 @@ jobs:
           else
             # No signing — copy unsigned APKs (installable via adb, not via Play/package installer)
             for APK in androidApp/build/outputs/apk/release/*-release-unsigned.apk; do
-              ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-release-unsigned//')
+              ARCH=$(basename "$APK" .apk | sed 's/androidApp-//; s/-release-unsigned$//')
               cp "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}-unsigned.apk"
             done
             echo "Unsigned release APKs collected (install via adb install)"
           fi
           # Debug APK is signed by Gradle (debug keystore) — always installable
           for APK in androidApp/build/outputs/apk/debug/*-debug.apk; do
-            ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-debug//')
+            ARCH=$(basename "$APK" .apk | sed 's/androidApp-//; s/-debug$//')
             cp "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}-debug.apk"
           done
           echo "=== All release APKs ==="
