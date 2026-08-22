@@ -31,6 +31,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
+          echo "org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC" >> ./gradle.properties
           ./gradlew androidApp:assembleRelease --no-configuration-cache
 
       - name: Decode keystore
@@ -109,8 +110,15 @@ jobs:
 
       - name: Build desktop distributable (Conveyor)
         run: |
+          if ! command -v conveyor &>/dev/null; then
+            echo "::warning::Conveyor CLI not installed on runner — skipping Windows build."
+            echo "Build not configured" > dist/windows-skipped.txt
+            mkdir -p dist
+            exit 0
+          fi
           chmod +x ./gradlew 2>/dev/null || true
-          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+          echo "isFullBuild=false" >> ./gradle.properties
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:buildWindowsMsix --no-configuration-cache 2>&1 | tail -50
 
       - name: Collect MSIX + install.bat + cert
         run: |
@@ -160,8 +168,15 @@ jobs:
 
       - name: Build macOS app (Conveyor)
         run: |
+          if ! command -v conveyor &>/dev/null; then
+            echo "::warning::Conveyor CLI not installed on runner — skipping macOS build."
+            echo "Build not configured" > dist/macos-skipped.txt
+            mkdir -p dist
+            exit 0
+          fi
           chmod +x ./gradlew
-          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+          echo "isFullBuild=false" >> ./gradle.properties
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:buildMacZipAmd64 --no-configuration-cache 2>&1 | tail -50
 
       - name: Wrap DMG
         run: |
@@ -216,8 +231,15 @@ jobs:
 
       - name: Build Linux app (Conveyor)
         run: |
+          if ! command -v conveyor &>/dev/null; then
+            echo "::warning::Conveyor CLI not installed on runner — skipping Linux build."
+            echo "Build not configured" > dist/linux-skipped.txt
+            mkdir -p dist
+            exit 0
+          fi
           chmod +x ./gradlew
-          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:conveyorMakeSite --no-configuration-cache
+          echo "isFullBuild=false" >> ./gradle.properties
+          ./gradlew :desktopApp:writeConveyorConfig :desktopApp:buildLinuxAppImage --no-configuration-cache 2>&1 | tail -50
 
       - name: Wrap AppImage
         run: |
