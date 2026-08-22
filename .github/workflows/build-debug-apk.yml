@@ -27,23 +27,16 @@ jobs:
           cache: 'gradle'
 
       - name: Build debug APK
-        id: build-step
-        continue-on-error: true
         run: |
-          set -o pipefail
           chmod +x ./gradlew
           echo "" >> ./gradle.properties
           echo "isFullBuild=false" >> ./gradle.properties
-          ./gradlew androidApp:assembleDebug --stacktrace 2>&1 | tee /tmp/build.log
+          ./gradlew androidApp:assembleDebug
 
-      - name: Show last 100 lines of build log
-        if: always()
-        run: |
-          echo "=== BUILD OUTPUT (last 100 lines) ==="
-          tail -100 /tmp/build.log 2>/dev/null || echo "No log file"
+      - name: Find APK
+        run: find androidApp/build/outputs -name "*.apk" 2>/dev/null | head -10 || echo "Not found"
 
       - name: Upload Debug APK
-        if: steps.build-step.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: LiquidFlow-debug-apk
