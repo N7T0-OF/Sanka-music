@@ -28,11 +28,20 @@ jobs:
           distribution: "microsoft"
           cache: 'gradle'
 
+      - name: Compile (verbose, stop on first error)
+        run: |
+          chmod +x ./gradlew
+          echo "isFullBuild=false" >> ./gradle.properties
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
+          ./gradlew androidApp:compileFossDebugKotlin --no-configuration-cache --stacktrace --info 2>&1 | tail -200
+        continue-on-error: true
+
       - name: Build debug APK (FOSS, no Sentry)
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
-          ./gradlew androidApp:assembleDebug --no-configuration-cache
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> ./gradle.properties
+          ./gradlew androidApp:assembleDebug --no-configuration-cache --stacktrace 2>&1 | tail -300
 
       - name: Find APK
         id: find-apk
