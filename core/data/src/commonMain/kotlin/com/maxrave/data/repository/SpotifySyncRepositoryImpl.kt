@@ -14,6 +14,7 @@ import com.maxrave.spotify.Spotify
 import com.maxrave.spotify.model.response.spotify.playlist.SpotifyPlaylist
 import com.maxrave.spotify.model.response.spotify.playlist.SpotifyTrack
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.Clock
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -32,7 +33,7 @@ internal class SpotifySyncRepositoryImpl(
     private suspend fun getValidToken(): String? {
         val token = dataStoreManager.spotifyOAuthAccessToken.first()
         val expiresAt = dataStoreManager.spotifyOAuthExpiresAt.first()
-        if (token.isNotEmpty() && expiresAt > System.currentTimeMillis()) return token
+        if (token.isNotEmpty() && expiresAt > Clock.System.now().toEpochMilliseconds()) return token
         val refreshToken = dataStoreManager.spotifyOAuthRefreshToken.first()
         if (refreshToken.isEmpty()) return null
         return try {
@@ -40,7 +41,7 @@ internal class SpotifySyncRepositoryImpl(
             result.onSuccess { tr ->
                 dataStoreManager.setSpotifyOAuthAccessToken(tr.accessToken)
                 dataStoreManager.setSpotifyOAuthRefreshToken(tr.refreshToken)
-                dataStoreManager.setSpotifyOAuthExpiresAt(System.currentTimeMillis() + (tr.expiresIn * 1000L))
+                dataStoreManager.setSpotifyOAuthExpiresAt(Clock.System.now().toEpochMilliseconds() + (tr.expiresIn * 1000L))
                 tr.accessToken
             }.getOrNull()
         } catch (e: Exception) { Logger.e(TAG, "Token refresh failed: ${e.message}"); null }
