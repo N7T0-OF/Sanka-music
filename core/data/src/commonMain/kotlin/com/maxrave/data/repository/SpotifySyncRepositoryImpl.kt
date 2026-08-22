@@ -31,18 +31,46 @@ internal class SpotifySyncRepositoryImpl(
 ) : SpotifySyncRepository {
 
     private suspend fun getValidToken(): String? {
-        val token = dataStoreManager.spotifyOAuthAccessToken.first()
-        val expiresAt = dataStoreManager.spotifyOAuthExpiresAt.first()
-        if (token.isNotEmpty() && expiresAt > Clock.System.now().toEpochMilliseconds()) return token
-        val refreshToken = dataStoreManager.spotifyOAuthRefreshToken.first()
-        if (refreshToken.isEmpty()) return null
-        return try {
-            val result = spotify.refreshOAuthToken(refreshToken).getOrNull() ?: return null
-            dataStoreManager.setSpotifyOAuthAccessToken(result.accessToken)
-            dataStoreManager.setSpotifyOAuthRefreshToken(result.refreshToken)
-            dataStoreManager.setSpotifyOAuthExpiresAt(Clock.System.now().toEpochMilliseconds() + (result.expiresIn * 1000L))
-            result.accessToken
-        } catch (e: Exception) { Logger.e(TAG, "Token refresh failed: ${e.message}"); null }
+        // 1. Try OAuth PKCE token first (for dedicated playlist access)
+        val oauthToken = dataStoreManager.spotifyOAuthAccessToken.first()
+        val oauthExpiresAt = dataStoreManager.spotifyOAuthExpiresAt.first()
+        if (oauthToken.isNotEmpty() && oauthExpiresAt > Clock.System.now().toEpochMilliseconds()) {
+            return oauthToken
+        }
+        // OAuth expired? Try refresh
+        val oauthRefreshToken = dataStoreManager.spotifyOAuthRefreshToken.first()
+        if (oauthRefreshToken.isNotEmpty()) {
+            try {
+                val result = spotify.refreshOAuthToken(oauthRefreshToken).getOrNull()
+                if (result != null) {
+                    dataStoreManager.setSpotifyOAuthAccessToken(result.accessToken)
+                    dataStoreManager.setSpotifyOAuthRefreshToken(result.refreshToken)
+                    dataStoreManager.setSpotifyOAuthExpiresAt(Clock.System.now().toEpochMilliseconds() + (result.expiresIn * 1000L))
+                    return result.accessToken
+                }
+            } catch (e: Exception) { Logger.e(TAG, "OAuth refresh failed: ${e.message}") }
+        }
+
+        // 2. Fall back to web player personal token (from existing SimpMusic Spotify login via sp_dc)
+        val personalToken = dataStoreManager.spotifyPersonalToken.first()
+        val personalExpires = dataStoreManager.spotifyPersonalTokenExpires.first()
+        if (personalToken.isNotEmpty() && personalExpires > Clock.System.now().toEpochMilliseconds()) {
+            return personalToken
+        }
+        // Personal token expired? Try to refresh via sp_dc cookie
+        val spdc = dataStoreManager.spdc.first()
+        if (spdc.isNotEmpty()) {
+            try {
+                val result = spotify.getPersonalToken(spdc).getOrNull()
+                if (result != null) {
+                    dataStoreManager.setSpotifyPersonalToken(result.accessToken)
+                    dataStoreManager.setSpotifyPersonalTokenExpires(result.accessTokenExpirationTimestampMs)
+                    return result.accessToken
+                }
+            } catch (e: Exception) { Logger.e(TAG, "Personal token refresh failed: ${e.message}") }
+        }
+
+        return null
     }
 
     override fun fetchPlaylists(): Flow<SpotifySyncProgress> = flow {

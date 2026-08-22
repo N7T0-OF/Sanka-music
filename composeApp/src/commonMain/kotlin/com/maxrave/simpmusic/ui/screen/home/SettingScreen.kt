@@ -1718,7 +1718,7 @@ fun SettingScreen(
                 )
                 SettingItem(
                     title = "Synchroniser les playlists",
-                    subtitle = "Importer vos playlists Spotify dans LiquidFlow",
+                    subtitle = "Importer vos playlists Spotify dans SpaceKai",
                     onClick = {
                         navController.navigate(SpotifySyncDestination)
                     },
