@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -136,6 +137,7 @@ import com.maxrave.simpmusic.ui.theme.md_theme_dark_primary
 import com.maxrave.simpmusic.ui.theme.parseThemeColorHex
 import com.maxrave.simpmusic.ui.theme.typo
 import com.maxrave.simpmusic.utils.VersionManager
+import com.maxrave.simpmusic.utils.performHapticWith
 import com.maxrave.simpmusic.viewModel.ImportViewModel
 import com.maxrave.simpmusic.viewModel.SettingAlertState
 import com.maxrave.simpmusic.viewModel.SettingBasicAlertState
@@ -305,7 +307,15 @@ import simpmusic.composeapp.generated.resources.ok
 import simpmusic.composeapp.generated.resources.open_system_equalizer
 import simpmusic.composeapp.generated.resources.openai
 import simpmusic.composeapp.generated.resources.openai_api_compatible
+import simpmusic.composeapp.generated.resources.orientation
+import simpmusic.composeapp.generated.resources.orientation_auto
+import simpmusic.composeapp.generated.resources.orientation_landscape
+import simpmusic.composeapp.generated.resources.orientation_portrait
 import simpmusic.composeapp.generated.resources.other_app
+import simpmusic.composeapp.generated.resources.interaction
+import simpmusic.composeapp.generated.resources.vibration
+import simpmusic.composeapp.generated.resources.vibration_description
+import simpmusic.composeapp.generated.resources.vibration_intensity
 import simpmusic.composeapp.generated.resources.play_explicit_content
 import simpmusic.composeapp.generated.resources.play_explicit_content_description
 import simpmusic.composeapp.generated.resources.play_video_for_video_track_instead_of_audio_only
@@ -471,6 +481,9 @@ fun SettingScreen(
     val downloadQuality by viewModel.downloadQuality.collectAsStateWithLifecycle()
     val autoDownloadLikedSongs by viewModel.autoDownloadLikedSongs.collectAsStateWithLifecycle()
     val downloadWiFiOnly by viewModel.downloadWiFiOnly.collectAsStateWithLifecycle()
+    val orientation by viewModel.orientation.collectAsStateWithLifecycle()
+    val vibrationEnabled by viewModel.vibrationEnabled.collectAsStateWithLifecycle()
+    val vibrationIntensity by viewModel.vibrationIntensity.collectAsStateWithLifecycle()
     val videoDownloadQuality by viewModel.videoDownloadQuality.collectAsStateWithLifecycle()
     val keepYoutubePlaylistOffline by viewModel.keepYouTubePlaylistOffline.collectAsStateWithLifecycle()
     val localTrackingEnabled by viewModel.localTrackingEnabled.collectAsStateWithLifecycle(initialValue = false)
@@ -683,6 +696,76 @@ fun SettingScreen(
                         switch = (enableLiquidGlass to { viewModel.setEnableLiquidGlass(it) }),
                         isEnable = getPlatform() == Platform.Android,
                     )
+                }
+                val orientationLabels =
+                    listOf(
+                        DataStoreManager.ORIENTATION_AUTO to stringResource(Res.string.orientation_auto),
+                        DataStoreManager.ORIENTATION_PORTRAIT to stringResource(Res.string.orientation_portrait),
+                        DataStoreManager.ORIENTATION_LANDSCAPE to stringResource(Res.string.orientation_landscape),
+                    )
+                SettingItem(
+                    title = stringResource(Res.string.orientation),
+                    subtitle = orientationLabels.firstOrNull { it.first == orientation }?.second ?: "",
+                    onClick = {
+                        viewModel.setAlertData(
+                            SettingAlertState(
+                                title = runBlocking { getString(Res.string.orientation) },
+                                selectOne =
+                                    SettingAlertState.SelectData(
+                                        listSelect = orientationLabels.map { (it.first == orientation) to it.second },
+                                    ),
+                                confirm =
+                                    runBlocking { getString(Res.string.change) } to { state ->
+                                        val selected = state.selectOne?.getSelected()
+                                        orientationLabels.firstOrNull { it.second == selected }?.first?.let {
+                                            viewModel.setOrientation(it)
+                                        }
+                                    },
+                                dismiss = runBlocking { getString(Res.string.cancel) },
+                            ),
+                        )
+                    },
+                )
+                Text(
+                    text = stringResource(Res.string.interaction),
+                    style = typo().labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                SettingItem(
+                    title = stringResource(Res.string.vibration),
+                    subtitle = stringResource(Res.string.vibration_description),
+                    smallSubtitle = true,
+                    switch = (vibrationEnabled to { viewModel.setVibrationEnabled(it) }),
+                )
+                if (vibrationEnabled) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.vibration_intensity),
+                                style = typo().bodyMedium,
+                            )
+                            Text(
+                                text = "$vibrationIntensity %",
+                                style = typo().bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Slider(
+                            value = vibrationIntensity.toFloat(),
+                            onValueChange = { viewModel.setVibrationIntensity(it.toInt()) },
+                            valueRange = 0f..100f,
+                            steps = 4,
+                        )
+                    }
                 }
             }
         }
@@ -1228,9 +1311,19 @@ fun SettingScreen(
                                     (crossfadeDuration / 1000).toFloat().coerceIn(0f, 30f),
                                 )
                             }
+                            val crossfadeHaptic = LocalHapticFeedback.current
+                            var lastHapticStep by remember(crossfadeDuration) { mutableStateOf(-1) }
                             Slider(
                                 value = crossfadeSliderValue,
-                                onValueChange = { crossfadeSliderValue = it },
+                                onValueChange = {
+                                    crossfadeSliderValue = it
+                                    // Haptic tick once per step (not per pixel) — throttled by design.
+                                    val step = it.toInt()
+                                    if (step != lastHapticStep) {
+                                        lastHapticStep = step
+                                        performHapticWith(crossfadeHaptic)
+                                    }
+                                },
                                 onValueChangeFinished = {
                                     viewModel.setCrossfadeDuration(
                                         crossfadeSliderValue.toInt() * 1000,

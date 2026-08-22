@@ -65,6 +65,7 @@ import com.maxrave.simpmusic.Platform
 import com.maxrave.simpmusic.expect.getDownloadFolderPath
 import com.maxrave.simpmusic.expect.ui.toByteArray
 import com.maxrave.simpmusic.getPlatform
+import com.maxrave.simpmusic.utils.HapticsState
 import com.maxrave.simpmusic.utils.VersionManager
 import com.maxrave.simpmusic.viewModel.base.BaseViewModel
 import kotlinx.coroutines.Dispatchers
@@ -209,6 +210,7 @@ class SharedViewModel(
     val shareSavedLyrics: StateFlow<Boolean> get() = _shareSavedLyrics
 
     init {
+        observeHapticsSettings()
         viewModelScope.launch {
             log("SharedViewModel init")
             if (dataStoreManager.appVersion.first() != VersionManager.getVersionName()) {
@@ -963,6 +965,19 @@ class SharedViewModel(
     private var _updateResponse = MutableStateFlow<UpdateData?>(null)
     val updateResponse: StateFlow<UpdateData?> = _updateResponse
 
+    private fun observeHapticsSettings() {
+        viewModelScope.launch {
+            dataStoreManager.vibrationEnabled.collect {
+                HapticsState.enabled = it == DataStoreManager.TRUE
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.vibrationIntensity.collect {
+                HapticsState.intensity = it.toIntOrNull() ?: 50
+            }
+        }
+    }
+
     fun checkForUpdate() {
         viewModelScope.launch {
             _isCheckingUpdate.value = true
@@ -975,7 +990,12 @@ class SharedViewModel(
                 updateRepository.checkForGithubReleaseUpdate().collectLatest { response ->
                     val data = response.data
                     when (response) {
-                        is Resource.Success if (data != null) -> {
+                        is Resource.Success if (data != null &&
+                            VersionManager.isVersionNewer(
+                                data.tagName,
+                                VersionManager.getVersionName(),
+                            )
+                        ) -> {
                             _updateResponse.value = data
                             showedUpdateDialog = true
                         }
@@ -990,7 +1010,12 @@ class SharedViewModel(
                 updateRepository.checkForFdroidUpdate().collectLatest { response ->
                     val data = response.data
                     when (response) {
-                        is Resource.Success if (data != null) -> {
+                        is Resource.Success if (data != null &&
+                            VersionManager.isVersionNewer(
+                                data.tagName,
+                                VersionManager.getVersionName(),
+                            )
+                        ) -> {
                             _updateResponse.value = data
                             showedUpdateDialog = true
                         }

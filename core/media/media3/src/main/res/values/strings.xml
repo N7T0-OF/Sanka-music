@@ -24,4 +24,9 @@
         <item quantity="one">%d song</item>
         <item quantity="other">%d songs</item>
     </plurals>
+    <plurals name="n_song_downloaded">
+        <item quantity="one">%d song downloaded</item>
+        <item quantity="other">%d songs downloaded</item>
+    </plurals>
+    <string name="download_completed_with_errors">Download completed — %1$d/%2$d songs (%3$d failed)</string>
 </resources>

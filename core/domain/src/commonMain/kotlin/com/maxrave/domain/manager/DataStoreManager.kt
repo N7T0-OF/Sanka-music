@@ -36,6 +36,18 @@ interface DataStoreManager {
 
     suspend fun setDownloadWiFiOnly(wifiOnly: Boolean)
 
+    val orientation: Flow<String>
+
+    suspend fun setOrientation(orientation: String)
+
+    val vibrationEnabled: Flow<String>
+
+    suspend fun setVibrationEnabled(enabled: Boolean)
+
+    val vibrationIntensity: Flow<String>
+
+    suspend fun setVibrationIntensity(intensity: Int)
+
     val language: Flow<String>
 
     /**
@@ -518,6 +530,10 @@ interface DataStoreManager {
         const val THEME_COLOR_DEFAULT = "DEFAULT"
         const val THEME_COLOR_WALLPAPER = "WALLPAPER"
         const val THEME_COLOR_CUSTOM = "CUSTOM"
+
+        const val ORIENTATION_AUTO = "auto"
+        const val ORIENTATION_PORTRAIT = "portrait"
+        const val ORIENTATION_LANDSCAPE = "landscape"
 
         const val DEFAULT_THEME_COLOR_HEX = "FF8ECAE6"
 

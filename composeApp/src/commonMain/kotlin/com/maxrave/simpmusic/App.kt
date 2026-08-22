@@ -353,7 +353,7 @@ fun App(viewModel: SharedViewModel = koinInject()) {
     LaunchedEffect(updateData) {
         val response = updateData ?: return@LaunchedEffect
         if (viewModel.showedUpdateDialog &&
-            response.tagName != getString(Res.string.version_format, VersionManager.getVersionName())
+            VersionManager.isVersionNewer(response.tagName, VersionManager.getVersionName())
         ) {
             shouldShowUpdateDialog = true
         }
@@ -731,7 +731,7 @@ fun App(viewModel: SharedViewModel = koinInject()) {
                                 onClick = {
                                     shouldShowUpdateDialog = false
                                     viewModel.showedUpdateDialog = false
-                                    openUrl("https://simpmusic.org/download")
+                                    openUrl("https://github.com/N7T0-OF/Sankamusic/releases/latest")
                                 },
                             ) {
                                 Text(

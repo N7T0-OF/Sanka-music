@@ -15,6 +15,7 @@ import com.maxrave.domain.manager.DataStoreManager
 import com.maxrave.domain.manager.DataStoreManager.Values.AI_PROVIDER_GEMINI
 import com.maxrave.domain.manager.DataStoreManager.Values.FALSE
 import com.maxrave.domain.manager.DataStoreManager.Values.GITHUB
+import com.maxrave.domain.manager.DataStoreManager.Values.ORIENTATION_AUTO
 import com.maxrave.domain.manager.DataStoreManager.Values.LOCAL_PLAYLIST_FILTER_OLDER_FIRST
 import com.maxrave.domain.manager.DataStoreManager.Values.PROXY_TYPE_HTTP
 import com.maxrave.domain.manager.DataStoreManager.Values.PROXY_TYPE_SOCKS
@@ -165,6 +166,45 @@ internal class DataStoreManagerImpl(
         withContext(Dispatchers.IO) {
             settingsDataStore.edit { settings ->
                 settings[DOWNLOAD_WIFI_ONLY] = if (wifiOnly) TRUE else FALSE
+            }
+        }
+    }
+
+    override val orientation: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[stringPreferencesKey(ORIENTATION)] ?: ORIENTATION_AUTO
+        }
+
+    override suspend fun setOrientation(orientation: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[stringPreferencesKey(ORIENTATION)] = orientation
+            }
+        }
+    }
+
+    override val vibrationEnabled: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[stringPreferencesKey(VIBRATION_ENABLED)] ?: TRUE
+        }
+
+    override suspend fun setVibrationEnabled(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[stringPreferencesKey(VIBRATION_ENABLED)] = if (enabled) TRUE else FALSE
+            }
+        }
+    }
+
+    override val vibrationIntensity: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[stringPreferencesKey(VIBRATION_INTENSITY)] ?: "50"
+        }
+
+    override suspend fun setVibrationIntensity(intensity: Int) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[stringPreferencesKey(VIBRATION_INTENSITY)] = intensity.coerceIn(0, 100).toString()
             }
         }
     }
@@ -1627,6 +1667,9 @@ internal class DataStoreManagerImpl(
         val DOWNLOAD_QUALITY = stringPreferencesKey("download_quality")
         val VIDEO_DOWNLOAD_QUALITY = stringPreferencesKey("video_download_quality")
         val DOWNLOAD_WIFI_ONLY = stringPreferencesKey("download_wifi_only")
+        val ORIENTATION = "orientation"
+        val VIBRATION_ENABLED = "vibration_enabled"
+        val VIBRATION_INTENSITY = "vibration_intensity"
         val NORMALIZE_VOLUME = stringPreferencesKey("normalize_volume")
         val SKIP_SILENT = stringPreferencesKey("skip_silent")
         val SAVE_STATE_OF_PLAYBACK = stringPreferencesKey("save_state_of_playback")

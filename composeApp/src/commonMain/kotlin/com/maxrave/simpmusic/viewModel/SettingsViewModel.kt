@@ -161,6 +161,12 @@ class SettingsViewModel(
     val autoDownloadLikedSongs: StateFlow<Boolean> = _autoDownloadLikedSongs
     private val _downloadWiFiOnly = MutableStateFlow<Boolean>(true)
     val downloadWiFiOnly: StateFlow<Boolean> = _downloadWiFiOnly
+    private val _orientation = MutableStateFlow<String>(DataStoreManager.ORIENTATION_AUTO)
+    val orientation: StateFlow<String> = _orientation
+    private val _vibrationEnabled = MutableStateFlow<Boolean>(true)
+    val vibrationEnabled: StateFlow<Boolean> = _vibrationEnabled
+    private val _vibrationIntensity = MutableStateFlow<Int>(50)
+    val vibrationIntensity: StateFlow<Int> = _vibrationIntensity
     private val _youtubeSubtitleLanguage = MutableStateFlow<String>("")
     val youtubeSubtitleLanguage: StateFlow<String> = _youtubeSubtitleLanguage
 
@@ -310,6 +316,8 @@ class SettingsViewModel(
         getCrossfadeSkipAlbum()
         getAutoDownloadLikedSongs()
         getDownloadWiFiOnly()
+        getOrientation()
+        getVibrationSettings()
         getContributorNameAndEmail()
         getBackupDownloaded()
         getUpdateChannel()
@@ -535,6 +543,48 @@ class SettingsViewModel(
     fun setDownloadWiFiOnly(enabled: Boolean) {
         viewModelScope.launch {
             dataStoreManager.setDownloadWiFiOnly(enabled)
+        }
+    }
+
+    private fun getOrientation() {
+        viewModelScope.launch {
+            dataStoreManager.orientation.collect { value ->
+                _orientation.value = value
+            }
+        }
+    }
+
+    fun setOrientation(value: String) {
+        viewModelScope.launch {
+            dataStoreManager.setOrientation(value)
+        }
+    }
+
+    private fun getVibrationSettings() {
+        viewModelScope.launch {
+            dataStoreManager.vibrationEnabled.collect { enabled ->
+                _vibrationEnabled.value = enabled == DataStoreManager.TRUE
+            }
+        }
+    }
+
+    fun setVibrationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setVibrationEnabled(enabled)
+        }
+    }
+
+    fun setVibrationIntensity(intensity: Int) {
+        viewModelScope.launch {
+            dataStoreManager.setVibrationIntensity(intensity)
+        }
+    }
+
+    fun getVibrationIntensity() {
+        viewModelScope.launch {
+            dataStoreManager.vibrationIntensity.collect { value ->
+                _vibrationIntensity.value = value.toIntOrNull() ?: 50
+            }
         }
     }
 

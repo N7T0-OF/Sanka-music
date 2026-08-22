@@ -79,6 +79,13 @@
     <string name="video_download_quality">Qualité de téléchargement vidéo</string>
     <string name="download_wifi_only">Télécharger uniquement en Wi-Fi</string>
     <string name="download_wifi_only_description">Suspend les téléchargements en données mobiles et les reprend automatiquement au retour du Wi-Fi.</string>
+    <string name="orientation">Orientation</string>
+    <string name="orientation_auto">Automatique</string>
+    <string name="orientation_portrait">Portrait</string>
+    <string name="orientation_landscape">Paysage</string>
+    <string name="vibration">Vibration</string>
+    <string name="vibration_description">Retour haptique sur les boutons et curseurs</string>
+    <string name="vibration_intensity">Intensité de vibration</string>
     <string name="clear_downloaded_cache">Effacer le cache téléchargé</string>
     <string name="clear_thumbnail_cache">Effacer le cache des miniatures</string>
     <string name="add">Ajouter</string>

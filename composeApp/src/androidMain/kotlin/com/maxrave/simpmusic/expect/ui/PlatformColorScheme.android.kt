@@ -6,7 +6,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -17,11 +16,8 @@ actual fun platformDynamicColorScheme(isDark: Boolean): ColorScheme? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
     val context = LocalContext.current
     return if (isDark) {
-        // Keep the OLED look: pin background/surface to pure black like the seed scheme.
-        dynamicDarkColorScheme(context).copy(
-            background = Color.Black,
-            surface = Color.Black,
-        )
+        // Use the full dynamic dark palette so wallpaper colors tint surfaces too.
+        dynamicDarkColorScheme(context)
     } else {
         dynamicLightColorScheme(context)
     }

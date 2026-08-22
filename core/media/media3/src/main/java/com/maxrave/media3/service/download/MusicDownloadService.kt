@@ -50,31 +50,70 @@ internal class MusicDownloadService :
     class TerminalStateNotificationHelper(
         private val context: Context,
         private val notificationHelper: DownloadNotificationHelper,
-        private var nextNotificationId: Int,
     ) : DownloadManager.Listener {
+        // Post a single summary notification when the whole queue reaches a terminal state,
+        // instead of one notification per track. Reset as soon as new work starts.
+        private var allDoneNotified = false
+
         override fun onDownloadChanged(
             downloadManager: DownloadManager,
             download: Download,
             finalException: Exception?,
         ) {
-            if (download.state == Download.STATE_FAILED) {
-                val notification =
-                    notificationHelper.buildDownloadFailedNotification(
-                        context,
-                        R.drawable.baseline_error_outline_24,
-                        null,
-                        Util.fromUtf8Bytes(download.request.data),
-                    )
-                NotificationUtil.setNotification(context, nextNotificationId++, notification)
-            } else if (download.state == Download.STATE_COMPLETED) {
-                val notification =
-                    notificationHelper.buildDownloadCompletedNotification(
-                        context,
-                        R.drawable.baseline_downloaded,
-                        null,
-                        Util.fromUtf8Bytes(download.request.data),
-                    )
-                NotificationUtil.setNotification(context, nextNotificationId++, notification)
+            when (download.state) {
+                Download.STATE_QUEUED,
+                Download.STATE_DOWNLOADING,
+                Download.STATE_STOPPED,
+                -> allDoneNotified = false
+
+                Download.STATE_COMPLETED,
+                Download.STATE_FAILED,
+                -> {
+                    val all = downloadManager.getCurrentDownloads()
+                    val anyActive =
+                        all.any {
+                            it.state == Download.STATE_QUEUED ||
+                                it.state == Download.STATE_DOWNLOADING ||
+                                it.state == Download.STATE_STOPPED ||
+                                it.state == Download.STATE_REMOVING
+                        }
+                    if (!anyActive && !allDoneNotified) {
+                        allDoneNotified = true
+                        val completed = all.count { it.state == Download.STATE_COMPLETED }
+                        val failed = all.count { it.state == Download.STATE_FAILED }
+                        if (completed + failed == 0) return
+                        val title =
+                            if (failed == 0) {
+                                context.resources.getQuantityString(
+                                    R.plurals.n_song_downloaded,
+                                    completed,
+                                    completed,
+                                )
+                            } else {
+                                context.getString(
+                                    R.string.download_completed_with_errors,
+                                    completed,
+                                    completed + failed,
+                                    failed,
+                                )
+                            }
+                        val notification =
+                            notificationHelper.buildDownloadCompletedNotification(
+                                context,
+                                R.drawable.baseline_downloaded,
+                                null,
+                                title,
+                            )
+                        // Fixed ID so a new summary replaces the previous one.
+                        NotificationUtil.setNotification(
+                            context,
+                            NOTIFICATION_ID + 1,
+                            notification,
+                        )
+                    }
+                }
+
+                else -> Unit
             }
         }
 

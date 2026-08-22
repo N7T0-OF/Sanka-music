@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,6 +48,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.maxrave.domain.data.player.GenericMediaItem
 import com.maxrave.logger.Logger
 import com.maxrave.simpmusic.expect.ui.PlatformBackdrop
+import com.maxrave.simpmusic.utils.performHapticWith
 import com.maxrave.simpmusic.ui.navigation.destination.home.AnalyticsDestination
 import com.maxrave.simpmusic.ui.navigation.destination.home.HomeDestination
 import com.maxrave.simpmusic.ui.navigation.destination.library.LibraryDestination
@@ -213,7 +215,10 @@ actual fun LiquidGlassAppBottomNavigationBar(
         }
     }
 
+    val hapticFeedback = LocalHapticFeedback.current
+
     fun selectTab(index: Int) {
+        performHapticWith(hapticFeedback)
         val screen = bottomNavScreens.find { it.ordinal == index } ?: return
         if (selectedIndex == index) {
             if (currentBackStackEntry?.destination?.hierarchy?.any {

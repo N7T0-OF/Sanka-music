@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -22,6 +23,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.maxrave.simpmusic.extension.artworkScrimBrush
 import com.maxrave.simpmusic.extension.greyScale
+import com.maxrave.simpmusic.utils.performHapticWith
 import com.maxrave.simpmusic.ui.navigation.destination.home.AnalyticsDestination
 import com.maxrave.simpmusic.ui.navigation.destination.home.HomeDestination
 import com.maxrave.simpmusic.ui.navigation.destination.library.LibraryDestination
@@ -54,6 +56,7 @@ fun AppBottomNavigationBar(
             BottomNavScreen.Library,
             BottomNavScreen.Search,
         )
+    val hapticFeedback = LocalHapticFeedback.current
     var selectedIndex by rememberSaveable {
         mutableIntStateOf(
             when (startDestination) {
@@ -101,6 +104,7 @@ fun AppBottomNavigationBar(
                 NavigationBarItem(
                     selected = selectedIndex == screen.ordinal,
                     onClick = {
+                        performHapticWith(hapticFeedback)
                         if (selectedIndex == screen.ordinal) {
                             if (currentBackStackEntry?.destination?.hierarchy?.any {
                                     it.hasRoute(screen.destination::class)
@@ -169,6 +173,7 @@ fun AppNavigationRail(
             BottomNavScreen.Library,
             BottomNavScreen.Search,
         )
+    val hapticFeedback = LocalHapticFeedback.current
     var selectedIndex by rememberSaveable {
         mutableIntStateOf(
             when (startDestination) {
@@ -228,6 +233,7 @@ fun AppNavigationRail(
                 },
                 selected = selectedIndex == screen.ordinal,
                 onClick = {
+                    performHapticWith(hapticFeedback)
                     if (selectedIndex == screen.ordinal) {
                         if (currentBackStackEntry?.destination?.hierarchy?.any {
                                 it.hasRoute(screen.destination::class)

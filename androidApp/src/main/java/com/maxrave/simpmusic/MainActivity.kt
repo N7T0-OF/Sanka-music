@@ -84,6 +84,26 @@ class MainActivity : AppCompatActivity() {
         startMusicService()
     }
 
+    private fun observeOrientationSetting() {
+        lifecycleScope.launch {
+            dataStoreManager.orientation.collect { value ->
+                val mode =
+                    when (value) {
+                        DataStoreManager.ORIENTATION_PORTRAIT ->
+                            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+                        DataStoreManager.ORIENTATION_LANDSCAPE ->
+                            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+                        else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                if (requestedOrientation != mode) {
+                    requestedOrientation = mode
+                }
+            }
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         if (shouldUnbind) {
@@ -115,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         unloadKoinModules(viewModelModule)
         loadKoinModules(viewModelModule)
         VersionManager.initialize()
+        observeOrientationSetting()
         checkForUpdate()
         if (viewModel.recreateActivity.value || viewModel.isServiceRunning) {
             viewModel.activityRecreateDone()
