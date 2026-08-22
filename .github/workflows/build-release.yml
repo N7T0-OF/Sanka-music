@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Publish Release
 
 on:
   workflow_dispatch:
@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  build-foss-release:
-    name: Build & sign FOSS release APK
+  publish:
+    name: Build & publish release
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,58 +26,84 @@ jobs:
           distribution: "microsoft"
           cache: 'gradle'
 
-      - name: Decode signing keystore
+      - name: Build FOSS release + debug
+        run: |
+          chmod +x ./gradlew
+          echo "" >> ./gradle.properties
+          echo "isFullBuild=false" >> ./gradle.properties
+          ./gradlew androidApp:assembleRelease androidApp:assembleDebug --no-configuration-cache
+
+      - name: Decode signing keystore (optional)
         env:
           BASE_64_SIGNING_KEY: ${{ secrets.BASE_64_SIGNING_KEY }}
         run: |
           if [ -n "$BASE_64_SIGNING_KEY" ]; then
             echo "$BASE_64_SIGNING_KEY" | base64 -d > liquidflow.jks
-            cp liquidflow.jks simpmusic.jks
-            echo "Keystore decoded"
+            echo "Keystore decoded successfully"
           else
-            echo "::warning::No BASE_64_SIGNING_KEY secret - APK will be unsigned"
+            echo "No keystore provided — APKs will be unsigned"
           fi
 
-      - name: Build FOSS release
+      - name: Sign APKs
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          chmod +x ./gradlew
-          echo "" >> ./gradle.properties
-          echo "isFullBuild=false" >> ./gradle.properties
-          ./gradlew androidApp:assembleRelease --no-configuration-cache
-
-      - name: Sign APKs (if keystore present)
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
+          mkdir -p release-apks
           if [ -f liquidflow.jks ] && [ -n "$KEYSTORE_PASSWORD" ]; then
             BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
             for APK in androidApp/build/outputs/apk/release/*-release-unsigned.apk; do
-              NAME=$(basename "$APK" -release-unsigned.apk)
-              "$BT/zipalign" -f 4 "$APK" "androidApp/build/outputs/apk/release/${NAME}-aligned.apk"
+              ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-release-unsigned//')
+              "$BT/zipalign" -f 4 "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}.apk"
               "$BT/apksigner" sign \
                 --ks liquidflow.jks \
                 --ks-key-alias "$KEY_ALIAS" \
                 --ks-pass "pass:$KEYSTORE_PASSWORD" \
                 --key-pass "pass:$KEY_PASSWORD" \
-                --out "androidApp/build/outputs/apk/release/LiquidFlow-${NAME}.apk" \
-                "androidApp/build/outputs/apk/release/${NAME}-aligned.apk"
-              rm -f "androidApp/build/outputs/apk/release/${NAME}-aligned.apk"
-              echo "Signed: LiquidFlow-${NAME}.apk"
+                "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}.apk"
+              echo "Signed: LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}.apk"
             done
           else
-            echo "::warning::No keystore - skipping signing"
+            # No signing — copy unsigned APKs (installable via adb, not via Play/package installer)
+            for APK in androidApp/build/outputs/apk/release/*-release-unsigned.apk; do
+              ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-release-unsigned//')
+              cp "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}-unsigned.apk"
+            done
+            echo "Unsigned release APKs collected (install via adb install)"
           fi
+          # Debug APK is signed by Gradle (debug keystore) — always installable
+          for APK in androidApp/build/outputs/apk/debug/*-debug.apk; do
+            ARCH=$(basename "$APK" | sed 's/androidApp-//; s/-debug//')
+            cp "$APK" "release-apks/LiquidFlow-v${GITHUB_REF##*/v}-${ARCH}-debug.apk"
+          done
+          echo "=== All release APKs ==="
+          ls -lh release-apks/
 
-      - name: Upload signed APKs
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: LiquidFlow-foss-release
-          path: |
-            androidApp/build/outputs/apk/release/LiquidFlow-*.apk
-          if-no-files-found: error
+          name: "LiquidFlow ${{ github.ref_name }}"
+          body: |
+            ## LiquidFlow ${{ github.ref_name }}
+
+            Fusion de Sanka-music (SimpMusic) avec la synchronisation des playlists Spotify.
+
+            ### Nouveautés
+            - 🎵 Synchronisation des playlists Spotify (OAuth PKCE)
+            - 🎨 UI de sélection et import de playlists
+            - 🔐 Support OAuth refresh token
+            - 📱 Multi-architecture (arm64-v8a, armeabi-v7a, x86_64, universal)
+
+            ### Installation
+            - **`-debug` APKs** : signées, installables directement (recommandé)
+            - **arm64-v8a** : la plupart des téléphones modernes
+            - **armeabi-v7a** : anciens appareils 32-bit
+            - **x86_64** : émulateurs
+            - **universal** : toutes les architectures (fichier plus gros)
+
+            ⚠️ Les APKs `-unsigned` (release optimisée sans clé de signature configurée) s'installent via `adb install`.
+            Pour des APKs release signées, configurez les secrets de signature (voir README).
+          files: release-apks/*
+          draft: false
+          prerelease: false
