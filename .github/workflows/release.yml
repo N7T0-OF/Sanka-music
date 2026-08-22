@@ -1,128 +1,122 @@
-name: Publish Release
+name: Build and Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag a publier (ex: v1.1.6)"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
 jobs:
   release:
-    name: Build & publish SpaceKai
+    name: Build and publish Android release
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v6
+      - name: Validate release tag
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid release tag: $RELEASE_TAG (expected vX.Y.Z)"
+            exit 1
+          fi
+
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: 21
-          distribution: "microsoft"
-          cache: 'gradle'
+          java-version: "21"
+          distribution: microsoft
+          cache: gradle
 
-      - name: Build release APK
-        run: |
-          chmod +x ./gradlew
-          echo "isFullBuild=false" >> ./gradle.properties
-          # Override the 5GB heap -> 3GB for CI runner
-          sed -i 's/^org\.gradle\.jvmargs=.*/org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC/' gradle.properties
-          echo "=== Heap ===" && grep jvmargs gradle.properties
-          ./gradlew androidApp:assembleRelease --no-configuration-cache
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Decode keystore
+      - name: Decode signing keystore
         env:
-          BASE_64_SIGNING_KEY: ${{ secrets.BASE_64_SIGNING_KEY }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || secrets.BASE_64_SIGNING_KEY }}
         run: |
-          if [ -n "$BASE_64_SIGNING_KEY" ]; then
-            echo "$BASE_64_SIGNING_KEY" | base64 -d > spacekai.jks
-            echo "Keystore decoded OK"
-          else
-            echo "::error::Android release signing is not configured. Add BASE_64_SIGNING_KEY secret."
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Missing KEYSTORE_BASE64 secret."
             exit 1
           fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > simpmusic.jks
+          chmod 600 simpmusic.jks
 
-      - name: Sign & verify APK
-        id: sign
+      - name: Build and sign release APK
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "::error::Android signing secrets missing (KEY_STORE_PASSWORD, ALIAS, KEY_PASSWORD)."
+          for variable in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!variable}" ]; then
+              echo "::error::Missing signing secret for $variable."
+              exit 1
+            fi
+          done
+          chmod +x ./gradlew ./build_and_sign_apk.sh
+          echo "isFullBuild=false" >> ./gradle.properties
+          sed -i 's/^org\.gradle\.jvmargs=.*/org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC/' gradle.properties
+          ./build_and_sign_apk.sh --release
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p dist
+          mapfile -t apks < <(find androidApp/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' \
+            ! -name '*unsigned*' ! -name '*aligned*')
+          if [ "${#apks[@]}" -eq 0 ]; then
+            echo "::error::No signed APK found."
             exit 1
           fi
-          mkdir -p dist
-          APK="$(find androidApp/build/outputs/apk/release -name "*universal*.apk" -not -name "*unsigned*" | head -1)"
-          if [ -z "$APK" ]; then
-            APK="$(find androidApp/build/outputs/apk/release -name "*.apk" -not -name "*unsigned*" | head -1)"
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one signed APK, found ${#apks[@]}:"
+            printf ' - %s\n' "${apks[@]}"
+            exit 1
           fi
-          [ -z "$APK" ] && APK="$(find androidApp/build/outputs/apk/release -name "*-release-unsigned.apk" | head -1)"
-          echo "Source APK: $APK"
-          ls -lh "$APK"
-          
-          VERSION="${GITHUB_REF##*/v}"
-          OUTPUT="dist/SpaceKai-v${VERSION}.apk"
-          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          
-          "$BT/zipalign" -f 4 "$APK" dist/aligned.apk
-          "$BT/apksigner" sign \
-            --ks spacekai.jks \
-            --ks-key-alias "$KEY_ALIAS" \
-            --ks-pass "pass:$KEYSTORE_PASSWORD" \
-            --key-pass "pass:$KEY_PASSWORD" \
-            --out "$OUTPUT" \
-            dist/aligned.apk
+          cp "${apks[0]}" "dist/LiquidMusic-${RELEASE_TAG}.apk"
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
 
-          "$BT/apksigner" verify --verbose "$OUTPUT"
-          
-          SHA=$(sha256sum "$OUTPUT" | cut -d' ' -f1)
-          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
-          echo "SHA-256: $SHA"
-          ls -lh "$OUTPUT"
-          
-          # Clean intermediates, keep ONLY the final APK in dist/
-          rm -f dist/aligned.apk dist/*.idsig
-          # Build SHA256SUMS.txt from the final APK only
-          cd dist && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Ensure release notes exist
+        run: |
+          if [ ! -f .github/RELEASE_TEMPLATE.md ]; then
+            mkdir -p .github
+            printf '%s\n' \
+              "## LiquidMusic ${RELEASE_TAG}" \
+              "" \
+              "Cette version a été construite automatiquement depuis le tag ${RELEASE_TAG}." \
+              "" \
+              "Consultez SHA256SUMS.txt pour vérifier l'APK avant l'installation." \
+              > .github/RELEASE_TEMPLATE.md
+          fi
+          sha256sum "dist/LiquidMusic-${RELEASE_TAG}.apk"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "SpaceKai ${{ github.ref_name }}"
-          body: |
-            ## 🎵 SpaceKai ${{ github.ref_name }}
-
-            Application de streaming musical basée sur YouTube Music.
-
-            ### Nouveautés
-            - 🎵 Synchronisation des playlists Spotify (login existant sp_dc)
-            - 🎨 UI de sélection et import de playlists Spotify
-            - 🎨 Paramètres réorganisés
-            - 🎨 Barre d'action personnalisable
-            - 🎨 Support Dynamic Color Android
-
-            ### Corrections
-            - 🐛 Correction du bug « Spotify non connecté » après login
-            - ⚡ Optimisation du chargement des playlists
-
-            ### Installation
-            Télécharger `SpaceKai-${{ github.ref_name }}.apk` → Installer directement.
-
-            ### SHA-256
-            ```
-            ${{ steps.sign.outputs.sha256 }}
-            ```
-
-            ---
-            *Basé sur SimpMusic (GPL-3.0) — Par Souanpt*
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "LiquidMusic ${{ env.RELEASE_TAG }}"
+          body_path: .github/RELEASE_TEMPLATE.md
           files: |
-            dist/SpaceKai-*.apk
+            dist/LiquidMusic-${{ env.RELEASE_TAG }}.apk
             dist/SHA256SUMS.txt
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
