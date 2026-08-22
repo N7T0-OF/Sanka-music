@@ -31,8 +31,9 @@ jobs:
         run: |
           chmod +x ./gradlew
           echo "isFullBuild=false" >> ./gradle.properties
-          echo "org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC" >> ./gradle.properties
-          ./gradlew androidApp:assembleRelease --no-configuration-cache
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC" >> ./gradle.properties
+          echo "=== gradle.properties ===" && grep -v "^#" gradle.properties | grep -v "^$" && echo "=== Memory ===" && free -h || true
+          ./gradlew androidApp:assembleRelease --no-configuration-cache 2>&1 | tail -40
 
       - name: Decode keystore
         env:
