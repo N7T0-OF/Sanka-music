@@ -26,8 +26,7 @@ jobs:
           distribution: "microsoft"
           cache: 'gradle'
 
-      - name: Build & test
+      - name: Build debug APK
         run: |
           chmod +x ./gradlew
-          echo "isFullBuild=false" >> ./gradle.properties
-          ./gradlew androidApp:assembleDebug --no-configuration-cache --stacktrace 2>&1 | tail -80
+          ./gradlew androidApp:assembleDebug --no-configuration-cache
