@@ -2437,16 +2437,23 @@ fun SettingScreen(
                 )
                 SettingItem(
                     title = stringResource(Res.string.author),
-                    subtitle = stringResource(Res.string.maxrave_dev),
+                    subtitle = stringResource(Res.string.souanpt),
                     onClick = {
-                        uriHandler.openUri("https://github.com/maxrave-dev")
+                        uriHandler.openUri("https://github.com/N7T0-OF")
                     },
                 )
                 SettingItem(
-                    title = stringResource(Res.string.developer_blog),
-                    subtitle = stringResource(Res.string.developer_blog_tagline),
+                    title = "🌐 Site Souanpt",
+                    subtitle = "haunt.gg/souanpt",
                     onClick = {
-                        uriHandler.openUri("https://maxrave.dev")
+                        uriHandler.openUri("https://haunt.gg/souanpt")
+                    },
+                )
+                SettingItem(
+                    title = "☕ Soutenir sur Ko-fi",
+                    subtitle = "ko-fi.com/souanpt",
+                    onClick = {
+                        uriHandler.openUri("https://ko-fi.com/souanpt")
                     },
                 )
                 if (getPlatform() == Platform.Android) {
@@ -2460,7 +2467,7 @@ fun SettingScreen(
                     title = stringResource(Res.string.buy_me_a_coffee),
                     subtitle = stringResource(Res.string.donation),
                     onClick = {
-                        uriHandler.openUri("https://github.com/sponsors/maxrave-dev")
+                        uriHandler.openUri("https://ko-fi.com/souanpt")
                     },
                 )
                 SettingItem(

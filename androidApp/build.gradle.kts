@@ -73,6 +73,12 @@ android {
             abiFilters.add("armeabi-v7a")
             abiFilters.add("arm64-v8a")
         }
+
+        packaging {
+            jniLibs {
+                useLegacyPackaging = true
+            }
+        }
     }
 
     bundle {
@@ -89,14 +95,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    isUniversalApk = true
-                    include(*abis)
-                }
-            }
         }
         debug {
             isMinifyEnabled = false

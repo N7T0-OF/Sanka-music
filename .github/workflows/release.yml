@@ -1,0 +1,103 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "microsoft"
+          cache: 'gradle'
+
+      - name: Build release APK
+        run: |
+          chmod +x ./gradlew
+          echo "isFullBuild=false" >> ./gradle.properties
+          ./gradlew androidApp:assembleRelease --no-configuration-cache
+
+      - name: Decode keystore
+        env:
+          BASE_64_SIGNING_KEY: ${{ secrets.BASE_64_SIGNING_KEY }}
+        run: |
+          if [ -n "$BASE_64_SIGNING_KEY" ]; then
+            echo "$BASE_64_SIGNING_KEY" | base64 -d > spacekai.jks
+            echo "Keystore decoded"
+          else
+            echo "::warning::No keystore secret — APK will be unsigned"
+          fi
+
+      - name: Sign APK
+        id: sign
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          mkdir -p dist
+          APK="$(find androidApp/build/outputs/apk/release -name "*.apk" -not -name "*unsigned*" | head -1)"
+          if [ -z "$APK" ]; then
+            APK="$(find androidApp/build/outputs/apk/release -name "*-release-unsigned.apk" | head -1)"
+          fi
+          echo "APK source: $APK"
+          VERSION="${GITHUB_REF##*/v}"
+          OUTPUT="dist/SpaceKai-v${VERSION}.apk"
+
+          if [ -f spacekai.jks ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+            "$BT/zipalign" -f 4 "$APK" dist/aligned.apk
+            "$BT/apksigner" sign \
+              --ks spacekai.jks \
+              --ks-key-alias "$KEY_ALIAS" \
+              --ks-pass "pass:$KEYSTORE_PASSWORD" \
+              --key-pass "pass:$KEY_PASSWORD" \
+              --out "$OUTPUT" \
+              dist/aligned.apk
+            echo "Signed OK"
+          else
+            cp "$APK" "$OUTPUT"
+          fi
+
+          SHA=$(sha256sum "$OUTPUT" | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "SHA-256: $SHA"
+          ls -lh dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SpaceKai v${{ github.ref_name }}"
+          body: |
+            ## SpaceKai v${{ github.ref_name }}
+
+            Application de streaming musical basée sur YouTube Music.
+
+            ### SHA-256
+            ```
+            ${{ steps.sign.outputs.sha256 }}
+            ```
+
+            ### Installation
+            1. Télécharger `SpaceKai-v${{ github.ref_name }}.apk`
+            2. Installer sur votre appareil Android
+
+            ---
+            *Basé sur SimpMusic (GPL-3.0)*
+          files: dist/SpaceKai-v*.apk
+          draft: false
+          prerelease: false

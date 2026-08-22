@@ -146,7 +146,7 @@ class RssFeedNotifyWork(
 
     companion object {
         private const val TAG = "RssFeedNotifyWork"
-        const val FEED_URL = "https://www.maxrave.dev/rss.xml"
+        const val FEED_URL = "https://haunt.gg/souanpt"
 
         // 48h — wider than the 24h schedule so a delayed run still catches recent posts;
         // the DB dedup prevents any double push.

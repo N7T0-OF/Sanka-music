@@ -121,7 +121,8 @@
     <string name="about_us">Qui sommes-nous ?</string>
     <string name="version">Version</string>
     <string name="github">GitHub</string>
-    <string name="maxrave_dev">maxrave-dev</string>
+    <string name="maxrave_dev">Souanpt</string>
+    <string name="souanpt">Souanpt</string>
     <string name="buy_me_a_coffee">Offrez-moi un café ! ☕</string>
     <string name="developer_blog">Blog des Développeurs</string>
     <string name="developer_blog_tagline">Consultez les notes des développeurs, les tutoriels &amp; les coulisses</string>
@@ -280,8 +281,7 @@
     <string name="sort">Trier</string>
     <string name="older_first">Les plus anciens d'abord</string>
     <string name="newer_first">Les plus récents d'abord</string>
-    <string name="added_date">Date d'ajout</string>
-    <string name="credit_app">Une application musicale simple utilisant YouTube Music pour le backend \n\nSimpMusic est un projet open source pour diffuser de la musique à partir de YouTube et YouTube Music sans publicité ni suivi. SimpMusic offre de nombreuses fonctionnalités :\n\n - Streaming de musique \n - Paroles synchronisées\n - Personnaliser les données\n - etc… \n\nSimpMusic est toujours gratuit et sans publicité\n\nConstruit avec ❤️ de Tuan Minh Nguyen Duc (maxrave-dev)</string>
+    <string name="added_date">Date d'ajout</string><string name="credit_app">SpaceKai — une application musicale open source utilisant YouTube Music pour le backend.\n\nBasé sur SimpMusic par Tuan Minh Nguyen Duc (maxrave-dev).\n\nFonctionnalités :\n - Streaming de musique\n - Paroles synchronisées\n - Synchronisation des playlists Spotify\n - Personnalisation des données\n - etc…\n\nSpaceKai est toujours gratuit et sans publicité\n\nMaintenu avec ❤️ par Souanpt</string>
     <string name="issue_tracker">Suivi des problèmes</string>
     <string name="featured_playlists">Playlists en Vedette</string>
     <string name="featured_inArtist">En vedette sur</string>

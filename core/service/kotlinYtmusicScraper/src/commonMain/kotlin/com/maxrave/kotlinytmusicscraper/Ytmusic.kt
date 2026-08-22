@@ -598,7 +598,7 @@ class Ytmusic {
         }
 
     suspend fun checkForGithubReleaseUpdate() =
-        httpClient.get("https://api.github.com/repos/maxrave-dev/SimpMusic/releases/latest") {
+        httpClient.get("https://api.github.com/repos/N7T0-OF/Sankamusic/releases/latest") {
             contentType(ContentType.Application.Json)
         }
 
